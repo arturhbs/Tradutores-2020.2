@@ -1,30 +1,11 @@
 %{
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include <string.h>
 
-int errorQty = 0;
 int currentLine = 1;
+int positionWord = 1;
 
-struct Error {
-    char error_symbol;
-    int line;
-};
-
-struct Error errorArray[500];
-/*
-void printError(){
-    if(errorQty > 0) {
-        printf("\n\n\n------ERROS LEXICOS: %d--------\n", errorQty);
-        for(int i = 0; i < errorQty; i++) {
-            char* msg =  (char *)malloc(100 * sizeof(char));
-            sprintf(msg, "Symbol not recognized: %c. line: %d\n", errorArray[i].error_symbol, errorArray[i].line);
-            yyerror(msg);
-        }
-    }
-}
-*/
 %}
 %option noyywrap
 %option noinput nounput
@@ -67,150 +48,152 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 %%
 
 {TYPE} {
-    printf("TYPE (%s) \n", yytext);
+    positionWord += strlen(yytext);
+    printf("TYPE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return TYPE;
 }
 
 {INT} {
-    printf("INT (%s) \n", yytext );
+    printf("INT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return INT;
 }
 
 {FLOAT} {
-    printf("FLOAT (%s) \n", yytext );
+    printf("FLOAT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return FLOAT;
 }
 
 {VECTOR} {
-    printf("VECTOR (%s) \n", yytext );
+    printf("VECTOR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return VECTOR;
 }
 
 
 
 {IF} {
-    printf("IF (%s) \n", yytext );
+    printf("IF = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return IF;
 }
 
 {ELSE} {
-    printf("ELSE (%s) \n", yytext );
+    printf("ELSE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return ELSE;
 }
 
 {WHILE} {
-    printf("WHILE (%s) \n", yytext );
+    printf("WHILE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return WHILE;
 }
 
 {RETURN} {
-    printf("RETURN (%s) \n", yytext );
+    printf("RETURN = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return RETURN;
 }
 
 {DISTANCE} {
-    printf("DISTANCE (%s) \n", yytext );
+    printf("DISTANCE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return DISTANCE;
 }
 
 {NORMALIZE} {
-    printf("NORMALIZE (%s) \n", yytext );
+    printf("NORMALIZE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return NORMALIZE;
 }
 
 {WRITE} {
-    printf("WRITE (%s) \n", yytext );
+    printf("WRITE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return WRITE;
 }
 
 {READ} {
-    printf("READ (%s) \n", yytext );
+    printf("READ = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return READ;
 }
 
 {QUOTES} {
-    printf("QUOTES (%s)\n", yytext);
+    printf("QUOTES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //BEGIN(STRING);
     //return QUOTES;
 }
 
 {ID} {
-    printf("ID (%s),  \n", yytext );
+    printf("ID = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return ID;
 }
 
 {ADD} {
-    printf("ADD (%s) \n", yytext );
+    printf("ADD = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return ADD;
 }
 
 {SUB} {
-    printf("SUB (%s) \n", yytext );
+    printf("SUB = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return SUB;
 }
 
 {MULT} {
-    printf("MULT (%s) \n", yytext );
+    printf("MULT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return MULT;
 }
 
 {DIV} {
-    printf("DIV (%s) \n", yytext );
+    printf("DIV = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return DIV;
 }
 
 {ASSING} {
-    printf("ASSING (%s) \n", yytext );
+    printf("ASSING = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return ASSING;
 }
 
 {OR} {
-    printf("OR (%s) \n", yytext );
+    printf("OR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return OR;
 }
 
 {AND} {
-    printf("AND (%s) \n", yytext );
+    printf("AND = '%s', | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return AND;
 }
 
 {COMPARABLES} {
-    printf("COMPARABLES (%s) \n", yytext );
+    printf("COMPARABLES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
     //return COMPARABLES;
 }
 
 {OPEN_PARENTESES} {
-    printf("OPEN_PARENTESES (%s) \n", yytext);
+    printf("OPEN_PARENTESES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return OPEN_PARENTESES;
 }
 
 {CLOSE_PARENTESES} {
-    printf("CLOSE_PARENTESES (%s) \n", yytext);
+    printf("CLOSE_PARENTESES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return CLOSE_PARENTESES;
 }
 
 {OPEN_BRACKETS} {
-    printf("OPEN_BRACKETS (%s) \n", yytext);
+    printf("OPEN_BRACKETS = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return OPEN_BRACKETS;
 }
 
 {CLOSE_BRACKETS} {
-    printf("CLOSE_BRACKETS (%s) \n", yytext);
+    printf("CLOSE_BRACKETS = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return CLOSE_BRACKETS;
 }
 
 {OPEN_CURLY} {
-    printf("OPEN_CURLY (%s) \n", yytext);
+    printf("OPEN_CURLY = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return OPEN_CURLY;
 }
 
 {CLOSE_CURLY} {
-    printf("CLOSE_CURLY (%s) \n", yytext);
+    printf("CLOSE_CURLY = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
     //return CLOSE_CURLY;
 }
 
 {EOL} {
     currentLine++;
+    positionWord = 1;
 }
 
 \t* {
@@ -220,25 +203,34 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 ";" {
-    return yytext[0];
+    //return yytext[0];
 }
 
 "," {
-    return yytext[0];
+    //return yytext[0];
 }
 
 ":" {
-    return yytext[0];
+    //return yytext[0];
 }
 
 "." {
-    return yytext[0];
+    //return yytext[0];
 }
 
 . {
-    errorArray[error_cnt].line = currentLine;
-    errorArray[error_cnt].error_symbol = yytext[0];
-    errorQty++;
+    printf("##### Ocorreu erro ######\n");
+    printf("ERROR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
 }
 
 %%
+
+// Got from 
+int main( int argc, char **argv ){
+    ++argv, --argc;  /* skip over program name */
+    if ( argc > 0 )
+        yyin = fopen( argv[0], "r" );
+    else
+        yyin = stdin;
+        yylex();
+}
