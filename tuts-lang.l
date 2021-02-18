@@ -21,11 +21,12 @@ CLOSE_CURLY [}]
 OPEN_BRACKETS [\[]
 CLOSE_BRACKETS [\]]
 DIGIT [0-9]
-VECTOR <(" ")*{INT}(" ")*(,(" ")*{INT}(" ")*)*>|<(" ")*{FLOAT}(" ")*(,(" ")*{FLOAT}(" ")*)*>
 INT [-]?{DIGIT}+
 FLOAT [-]?{DIGIT}+"."{DIGIT}*
 LETTER [a-zA-Z]
 TYPE "int"|"float"|"elem"|"set"
+EMPTY_LABEL "EMPTY"
+NEGATIVE_IF_ID [!]{ID}
 IF "if"
 ELSE "else"
 WHILE "while"
@@ -34,6 +35,7 @@ READ "read"
 WRITE "write"
 DISTANCE "distance"
 NORMALIZE "normalize"
+OUTINPUT "writeln"|"write"|"read"
 ADD "+"
 SUB "-"
 MULT "*"
@@ -41,7 +43,8 @@ DIV "/"
 ASSING "="
 OR "||"
 AND "&&"
-QUOTES ["]
+QUOTES ["']
+SET_INSTRUCT "in" 
 COMPARABLES "<="|"=="|">="|">"|"<"|"!="
 ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 
@@ -49,146 +52,183 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 {TYPE} {
     positionWord += strlen(yytext);
-    printf("TYPE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    printf("Line %d | Position %d | TYPE = '%s'\n",  currentLine, positionWord, yytext);
     //return TYPE;
 }
 
 {INT} {
-    printf("INT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | INT = '%s'\n", currentLine, positionWord, yytext);
     //return INT;
 }
 
 {FLOAT} {
-    printf("FLOAT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | FLOAT = '%s'\n", currentLine, positionWord, yytext);
     //return FLOAT;
 }
 
-{VECTOR} {
-    printf("VECTOR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
-    //return VECTOR;
-}
-
-
-
 {IF} {
-    printf("IF = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | IF = '%s' \n", currentLine, positionWord, yytext );
     //return IF;
 }
 
 {ELSE} {
-    printf("ELSE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | ELSE = '%s'\n", currentLine, positionWord, yytext );
     //return ELSE;
 }
 
 {WHILE} {
-    printf("WHILE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | WHILE = '%s'  \n", currentLine, positionWord, yytext );
     //return WHILE;
 }
 
 {RETURN} {
-    printf("RETURN = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | RETURN = '%s'\n", currentLine, positionWord, yytext );
     //return RETURN;
 }
 
 {DISTANCE} {
-    printf("DISTANCE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | DISTANCE = '%s'\n", currentLine, positionWord, yytext );
     //return DISTANCE;
 }
 
 {NORMALIZE} {
-    printf("NORMALIZE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | NORMALIZE = '%s'\n", currentLine, positionWord, yytext );
     //return NORMALIZE;
 }
 
 {WRITE} {
-    printf("WRITE = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | WRITE = '%s' \n", currentLine, positionWord, yytext );
     //return WRITE;
 }
 
 {READ} {
-    printf("READ = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | READ = '%s' \n", currentLine, positionWord, yytext );
     //return READ;
 }
 
 {QUOTES} {
-    printf("QUOTES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
-    //BEGIN(STRING);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | QUOTES = '%s' \n", currentLine, positionWord, yytext);
     //return QUOTES;
 }
 
-{ID} {
-    printf("ID = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
-    //return ID;
-}
 
 {ADD} {
-    printf("ADD = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | ADD = '%s' \n", currentLine, positionWord, yytext );
     //return ADD;
 }
 
 {SUB} {
-    printf("SUB = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | SUB = '%s'\n", currentLine, positionWord, yytext);
     //return SUB;
 }
 
 {MULT} {
-    printf("MULT = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | MULT = '%s'\n", currentLine, positionWord, yytext );
     //return MULT;
 }
 
 {DIV} {
-    printf("DIV = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | DIV = '%s' \n", currentLine, positionWord, yytext );
     //return DIV;
 }
 
 {ASSING} {
-    printf("ASSING = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | ASSING = '%s'\n", currentLine, positionWord, yytext );
     //return ASSING;
 }
 
 {OR} {
-    printf("OR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | OR = '%s' \n", currentLine, positionWord, yytext );
     //return OR;
 }
 
 {AND} {
-    printf("AND = '%s', | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | AND = '%s'\n", currentLine, positionWord , yytext);
     //return AND;
 }
 
 {COMPARABLES} {
-    printf("COMPARABLES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord );
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | COMPARABLES = '%s' \n", currentLine, positionWord, yytext );
     //return COMPARABLES;
 }
 
 {OPEN_PARENTESES} {
-    printf("OPEN_PARENTESES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | OPEN_PARENTESES = '%s' \n", currentLine, positionWord, yytext);
     //return OPEN_PARENTESES;
 }
 
 {CLOSE_PARENTESES} {
-    printf("CLOSE_PARENTESES = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | CLOSE_PARENTESES = '%s' \n", currentLine, positionWord, yytext);
     //return CLOSE_PARENTESES;
 }
 
 {OPEN_BRACKETS} {
-    printf("OPEN_BRACKETS = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | OPEN_BRACKETS = '%s'\n", currentLine, positionWord, yytext);
     //return OPEN_BRACKETS;
 }
 
 {CLOSE_BRACKETS} {
-    printf("CLOSE_BRACKETS = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    printf("Line %d | Position %d | CLOSE_BRACKETS = '%s'\n", currentLine, positionWord, yytext);
     //return CLOSE_BRACKETS;
 }
 
 {OPEN_CURLY} {
-    printf("OPEN_CURLY = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | OPEN_CURLY = '%s' \n", currentLine, positionWord, yytext);
     //return OPEN_CURLY;
 }
 
 {CLOSE_CURLY} {
-    printf("CLOSE_CURLY = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | CLOSE_CURLY = '%s'\n", currentLine, positionWord, yytext);
     //return CLOSE_CURLY;
+}
+
+
+{EMPTY_LABEL} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | EMPTY = '%s'\n", currentLine, positionWord, yytext);
+    //return EMPTY_LABEL
+}
+
+{SET_INSTRUCT} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | SET_INSTRUCT = '%s'\n", currentLine, positionWord, yytext);
+    //return SET_INSTRUCT
+}
+
+{OUTINPUT} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | OUTINPUT = '%s'\n", currentLine, positionWord, yytext);
+    //return OUTINPUT
+}
+
+{NEGATIVE_IF_ID} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | NEGATIVE_IF_ID = '%s'\n", currentLine, positionWord, yytext);
+    //return NEGATIVE_IF_ID
 }
 
 {EOL} {
@@ -200,6 +240,7 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 " "* {
+    // return yytext[0];
 }
 
 ";" {
@@ -218,9 +259,16 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
     //return yytext[0];
 }
 
+{ID} {
+    printf("Line %d | Position %d | ID = '%s'\n", currentLine, positionWord, yytext );
+    //return ID;
+}
+
+
 . {
-    printf("##### Ocorreu erro ######\n");
-    printf("ERROR = '%s' | Line %d | Position %d \n", yytext, currentLine, positionWord);
+    printf("\n##### Ocorreu erro ######\n");
+    printf("Line %d | Position %d | ERROR = '%s' \n",  currentLine, positionWord, yytext);
+    printf("##### Fim Erro     #####\n\n");
 }
 
 %%
