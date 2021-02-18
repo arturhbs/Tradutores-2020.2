@@ -33,8 +33,6 @@ IF "if"
 ELSE "else"
 WHILE "while"
 RETURN "return"
-READ "read"
-WRITE "write"
 DISTANCE "distance"
 NORMALIZE "normalize"
 OUTINPUT "writeln"|"write"|"read"
@@ -103,18 +101,6 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | NORMALIZE = '%s'\n", currentLine, positionWord, yytext );
     //return NORMALIZE;
-}
-
-{WRITE} {
-    positionWord += strlen(yytext);
-    printf("Line %d | Position %d | WRITE = '%s' \n", currentLine, positionWord, yytext );
-    //return WRITE;
-}
-
-{READ} {
-    positionWord += strlen(yytext);
-    printf("Line %d | Position %d | READ = '%s' \n", currentLine, positionWord, yytext );
-    //return READ;
 }
 
 {STRING_DOUBLE_QUOTE} {
