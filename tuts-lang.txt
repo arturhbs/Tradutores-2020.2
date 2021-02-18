@@ -1,5 +1,5 @@
 set copy_set(set s) {
-    set ans;
+    set %ans;
     ans = EMPTY;
     forall(x in s) add(x in ans);
     return ans;
@@ -14,7 +14,7 @@ set succ(set n) {
 int main() {
     set zero; set one; set two; set three;
    
-    zero = EMPTY;
+    zero = 'EMPTY32 32';
     one = succ(zero);
     two = succ(one);
     three = succ(two);

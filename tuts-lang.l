@@ -27,6 +27,8 @@ LETTER [a-zA-Z]
 TYPE "int"|"float"|"elem"|"set"
 EMPTY_LABEL "EMPTY"
 NEGATIVE_IF_ID [!]{ID}
+STRING_DOUBLE_QUOTE \"(\\.|[^"\\])*\"
+STRING_SIMPLE_QUOTE \'(\\.|[^"\\])*\'
 IF "if"
 ELSE "else"
 WHILE "while"
@@ -43,7 +45,6 @@ DIV "/"
 ASSING "="
 OR "||"
 AND "&&"
-QUOTES ["']
 SET_INSTRUCT "in" 
 COMPARABLES "<="|"=="|">="|">"|"<"|"!="
 ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
@@ -116,10 +117,16 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
     //return READ;
 }
 
-{QUOTES} {
+{STRING_DOUBLE_QUOTE} {
     positionWord += strlen(yytext);
-    printf("Line %d | Position %d | QUOTES = '%s' \n", currentLine, positionWord, yytext);
-    //return QUOTES;
+    printf("Line %d | Position %d | STRING_DOUBLE_QUOTE = '%s' \n", currentLine, positionWord, yytext);
+    //return STRING_DOUBLE_QUOTE;
+}
+
+{STRING_SIMPLE_QUOTE} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | STRING_SIMPLE_QUOTE = '%s' \n", currentLine, positionWord, yytext);
+    //return STRING_SIMPLE_QUOTE;
 }
 
 
