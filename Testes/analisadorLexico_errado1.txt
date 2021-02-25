@@ -1,0 +1,7 @@
+set copy_set(set s) {
+    set %ans;
+    ans = EMPTY;
+    forall(x in$ s) add(x in ans);
+    return ans;
+}
+

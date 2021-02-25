@@ -1,7 +1,5 @@
 %{
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 int currentLine = 1;
 int positionWord = 1;
@@ -45,7 +43,7 @@ OR "||"
 AND "&&"
 SET_INSTRUCT "in" 
 COMPARABLES "<="|"=="|">="|">"|"<"|"!="
-ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
+ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
 
@@ -266,12 +264,14 @@ ID  {LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
 
-// Got from 
+// Got from documentation flex https://westes.github.io/flex/manual/Simple-Examples.html#Simple-Examples
 int main( int argc, char **argv ){
-    ++argv, --argc;  /* skip over program name */
-    if ( argc > 0 )
-        yyin = fopen( argv[0], "r" );
-    else
-        yyin = stdin;
-        yylex();
+    ++argv, --argc;
+    if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
+    
+    yylex();
+    fclose(yyin);
+    yylex_destroy();
+
+    return 0;
 }

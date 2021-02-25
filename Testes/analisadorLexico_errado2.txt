@@ -1,0 +1,8 @@
+int main() {
+    set zero; set one; set two; set three;
+   
+    zero = 'EMPTY;
+    one = succ(zero);
+    two = succ(one);
+    three = succ(two);
+}
