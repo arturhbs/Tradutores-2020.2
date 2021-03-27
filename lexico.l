@@ -22,45 +22,32 @@ int positionWord = 1;
 
 INT [-]?{DIGIT}+
 FLOAT [-]?{DIGIT}+"."{DIGIT}*
-TYPE_INT "int"
-TYPE_FLOAT "float"
-TYPE_ELEM "elem"
-TYPE_SET "set"
-TYPE "int2"
+TYPE "int" | "float" | "elem" | "set"
+SET_COMMANDS "add"| "remove" | "forall" | is_set | "in" | "exists"
+EMPTY_LABEL "EMPTY"
+OUTINPUT "writeln"|"write"|"read"
 IF "if"
 ELSE "else"
+FOR "for"
 RETURN "return"
 STRING_DOUBLE_QUOTE \"(\\.|[^"\\])*\"
 STRING_SIMPLE_QUOTE \'(\\.|[^"\\])*\'
-ADD "+"
-SUB "-"
-MULT "*"
-DIV "/"
+ADD_SUB "+" | "-"
+MULT_DIV "*" | "/"
 ASSING "="
-OR "||"
-AND "&&"
-COMPARABLES "==+"
-COMPARABLES_EQUAL "=="
-COMPARABLES_DIFF "!="
-COMPARABLES_LTE "<="
-COMPARABLES_GTE ">="
-COMPARABLES_LT "<"
-COMPARABLES_GT ">"
+OR_AND "||" | "&&"
+COMPARABLES "=="|"!="|"<="|">="|"<"|">"
 CLOSE_BRACKETS [\]]
 OPEN_BRACKETS [\[]
 CLOSE_PARENTESES [)]
 OPEN_PARENTESES [(]
 CLOSE_CURLY [}]
 OPEN_CURLY [{]
-EMPTY_LABEL "EMPTY"
-DELIM [ \t]
-WHITESPACE {DELIM}+
+COMMENT "//"
+NEGATIVE_IF_ID [!]{ID}
 UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
-NEGATIVE_IF_ID [!]{ID}
-OUTINPUT "writeln"|"write"|"read"
-SET_INSTRUCT "in" 
 SEP [,.;:]
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
@@ -79,33 +66,92 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     //return FLOAT;
 }
 
-{TYPE} {
+{TYPE} {"int" | "float" | "elem" | "set"
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | TYPE = '%s'\n",  currentLine, positionWord, yytext);
+    if(yytext == "int"){
+        // return TYPE_INT;
+    }
+    else{
+        if(yytext == "float"){
+            // return TYPE_FLOAT;
+        }
+        else{
+            if(yytext == "elem"){
+                // return TYPE_ELEM;
+            }
+            else{
+                if(yytext == "set"){
+                    //return TYPE_SET;
+                }
+                else{
+                    if(yytext == "exists"){
+                        //return TYPE_EXISTS;
+                    }
+                }
+            }
+        }
+    }
 
 }
 
-{TYPE_INT} {
+{SET_COMMANDS} {
     positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | TYPE_INT = '%s' \n", currentLine, positionWord, yytext );
-    return TYPE_INT;
+    printf("Line %d | Position %d | SET_COMMANDS = '%s' \n", currentLine, positionWord, yytext );
+    if(yytext == "add"){
+        //return SET_ADD;
+    }
+    else{
+        if(yytext == "remove"){
+            //return SET_REMOVE;
+        }
+        else{
+            if(yytext == "forall"){
+                //return SET_FORALL;
+            }
+            else{
+                if(yytext == "is_set"){
+                    //return SET_IS_SET;
+                }
+                else{
+                    if(yytext == "in"){
+                        //return SET_IN;
+                    }
+                    else{
+                        if(yytext == "exists"){
+                            //return SET_EXISTS;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-{TYPE_FLOAT} {
+
+{EMPTY_LABEL} {
     positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | TYPE_FLOAT = '%s' \n", currentLine, positionWord, yytext );
-    return TYPE_FLOAT;
-}
-{TYPE_ELEM} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | TYPE_ELEM = '%s' \n", currentLine, positionWord, yytext );
-    return TYPE_ELEM;
+    //printf("Line %d | Position %d | EMPTY = '%s'\n", currentLine, positionWord, yytext);
+    //return EMPTY_LABEL;
 }
 
-{TYPE_SET} {
+
+{OUTINPUT} { "writeln"|"write"|"read"
     positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | TYPE_SET = '%s' \n", currentLine, positionWord, yytext );
-    return TYPE_SET;
+    //printf("Line %d | Position %d | OUTINPUT = '%s'\n", currentLine, positionWord, yytext);
+    if(yytext == "writeln"){
+        //return OUT_WRITELN;
+    }
+    else{
+        if(yytext == "write"){
+            //return OUT_WRITE;
+        }
+        else{
+            if(yytext == "read"){
+                //return IN_READ;
+            }
+        }
+    }
 }
 
 
@@ -121,6 +167,11 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     //return ELSE;
 }
 
+{FOR} {
+    positionWord += strlen(yytext);
+    printf("Line %d | Position %d | FOR = '%s'\n", currentLine, positionWord, yytext );
+    //return FOR;
+}
 
 {RETURN} {
     positionWord += strlen(yytext);
@@ -141,28 +192,31 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 
-{ADD} {
+{ADD_SUB} {
     positionWord += strlen(yytext);
-    printf("Line %d | Position %d | ADD = '%s' \n", currentLine, positionWord, yytext );
-    //return ADD;
+    printf("Line %d | Position %d | ADD_SUB = '%s' \n", currentLine, positionWord, yytext );
+    if(yytext == "+"){
+        //return ADD;
+    }
+    else{
+        if(yytext == "-"){
+            //return SUB;
+        }
+    }
 }
 
-{SUB} {
-    positionWord += strlen(yytext);
-    printf("Line %d | Position %d | SUB = '%s'\n", currentLine, positionWord, yytext);
-    //return SUB;
-}
 
-{MULT} {
+{MULT_DIV} {
     positionWord += strlen(yytext);
-    printf("Line %d | Position %d | MULT = '%s'\n", currentLine, positionWord, yytext );
-    //return MULT;
-}
-
-{DIV} {
-    positionWord += strlen(yytext);
-    printf("Line %d | Position %d | DIV = '%s' \n", currentLine, positionWord, yytext );
-    //return DIV;
+    printf("Line %d | Position %d | MULT_DIV = '%s'\n", currentLine, positionWord, yytext );
+    if(yytext == "*"){
+        //return MULT;
+    }
+    else{
+        if(yytext == "/"){
+            //return DIV;
+        }
+    }
 }
 
 {ASSING} {
@@ -171,55 +225,51 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     //return ASSING;
 }
 
-{OR} {
+{OR_AND} {
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | OR = '%s' \n", currentLine, positionWord, yytext );
-    //return OR;
-}
-
-{AND} {
-    positionWord += strlen(yytext);
-    printf("Line %d | Position %d | AND = '%s'\n", currentLine, positionWord , yytext);
-    //return AND;
+    if(yytext == "||"){
+        return OR;
+    }
+    else{
+        if(yytext == "&&"){
+            return AND;
+        }
+    }
 }
 
 {COMPARABLES} {
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | COMPARABLES = '%s' \n", currentLine, positionWord, yytext );
-    //return COMPARABLES;     
-}
-
-
-{COMPARABLES_EQUAL} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_EQUAL = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_EQUAL;
-}
-{COMPARABLES_DIFF} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_DIFF = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_DIFF;
-}
-
-{COMPARABLES_LTE} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_LTE = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_LTE;
-}
-{COMPARABLES_GTE} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_GTE = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_GTE;
-}
-{COMPARABLES_LT} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_LT = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_LT;
-}
-{COMPARABLES_GT} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | COMPARABLES_GT = '%s'\n", currentLine, positionWord, yytext);
-    //return COMPARABLES_GT;
+    //return COMPARABLES;     "=="|"!="|"<="|">="|"<"|">"
+    if(yytext == "=="){
+        return COMPARABLES_EQUAL;
+    }
+    else{
+        if(yytext == "!="){
+            //return COMPARABLES_DIFF;
+        }
+        else{
+            if(yytext == "<="){
+                //return COMPARABLES_LTE;
+            }
+            else{
+                if(yytext == ">="){
+                    //return COMPARABLES_GTE;
+                }
+                else{
+                    if(yytext == "<"){
+                        //return COMPARABLES_LT;
+                    }
+                    else{
+                        if(yytext == ">"){
+                            //return COMPARABLES_GT;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 {CLOSE_BRACKETS} {
@@ -259,24 +309,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 
-{EMPTY_LABEL} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | EMPTY = '%s'\n", currentLine, positionWord, yytext);
-    //return EMPTY_LABEL;
-}
-
-{SET_INSTRUCT} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | SET_INSTRUCT = '%s'\n", currentLine, positionWord, yytext);
-    //return SET_INSTRUCT;
-}
-
-{OUTINPUT} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | OUTINPUT = '%s'\n", currentLine, positionWord, yytext);
-    //return OUTINPUT;
-}
-
 {NEGATIVE_IF_ID} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | NEGATIVE_IF_ID = '%s'\n", currentLine, positionWord, yytext);
@@ -284,7 +316,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 "\n" {
-    printf("<EOL>\n");
+    //printf("<EOL>\n");
     currentLine++;
     positionWord = 1;
 }
