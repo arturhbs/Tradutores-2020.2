@@ -74,19 +74,19 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     }
     else{
         if(yytext == "float"){
-            // return TYPE_FLOAT;
+            return TYPE_FLOAT;
         }
         else{
             if(yytext == "elem"){
-                // return TYPE_ELEM;
+                return TYPE_ELEM;
             }
             else{
                 if(yytext == "set"){
-                    //return TYPE_SET;
+                    return TYPE_SET;
                 }
                 else{
                     if(yytext == "exists"){
-                        //return TYPE_EXISTS;
+                        return TYPE_EXISTS;
                     }
                 }
             }
@@ -229,11 +229,11 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | OR = '%s' \n", currentLine, positionWord, yytext );
     if(yytext == "||"){
-        return OR;
+        //return OR;
     }
     else{
         if(yytext == "&&"){
-            return AND;
+            //return AND;
         }
     }
 }
@@ -243,7 +243,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     printf("Line %d | Position %d | COMPARABLES = '%s' \n", currentLine, positionWord, yytext );
     //return COMPARABLES;     "=="|"!="|"<="|">="|"<"|">"
     if(yytext == "=="){
-        return COMPARABLES_EQUAL;
+        //return COMPARABLES_EQUAL;
     }
     else{
         if(yytext == "!="){
@@ -275,13 +275,13 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {CLOSE_BRACKETS} {
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | CLOSE_BRACKETS = '%s'\n", currentLine, positionWord, yytext);
-    //return CLOSE_BRACKETS;
+    return CLOSE_BRACKETS;
 }
 
 {OPEN_BRACKETS} {
     positionWord += strlen(yytext);
     printf("Line %d | Position %d | OPEN_BRACKETS = '%s'\n", currentLine, positionWord, yytext);
-    //return OPEN_BRACKETS;
+    return OPEN_BRACKETS;
 }
 
 {OPEN_PARENTESES} {
