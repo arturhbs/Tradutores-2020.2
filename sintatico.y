@@ -9,16 +9,16 @@ extern void yyerror(const char *string);
 extern int yylex_destroy();
 extern FILE *yyin;
 
-
 %}
-%token OPEN_CURLY CLOSE_CURLY OPEN_PARENTESES CLOSE_PARENTESES
-%token TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
-%token ID
 
 %union {
   char* string;
   struct nodeTree* nodeTree;
 }
+
+%token OPEN_CURLY CLOSE_CURLY OPEN_PARENTESES CLOSE_PARENTESES OPEN_BRACKETS CLOSE_BRACKETS
+%token <str> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
+%token <str> ID
 
 %%
 tradutor: declaracoesExtenas  {printf("<TRADUTORES>\n");}
@@ -61,13 +61,13 @@ void yyerror(const char *string) {
 
 // Got from documentation flex https://westes.github.io/flex/manual/Simple-Examples.html#Simple-Examples
 int main( int argc, char **argv ){
-    ++argv, --argc;
-    if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
+  ++argv, --argc;
+  if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
 
-    yyparse();
-    fclose(yyin);
-    yylex_destroy();
+  yyparse();
+  fclose(yyin);
+  yylex_destroy();
 
-    return 0;
+  return 0;
 }
 
