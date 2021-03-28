@@ -7,73 +7,82 @@
 
 <funcoes> ::= <tipagem> <identificador> ( <parametros> ) <posDeclaracao>
 
-<parametros>: parametroLista | e
+<tipagem> ::= int
+            | float
+            | elem
+            | set 
 
-<parametroLista> ::= <declaracoesVariaveis>
-                   | <parametros> , <declaracoesVariaveis>
+<identificador> ::= (<sublinhado>|<letra>)+(<letra>|<digito>|<sublinhado>)*
 
-<declaracoesVariaveis> ::= <tipagem> <identificador> ; | <tipagem> <identificador>
+<parametros> ::= <tipagem> <identificador>
+                | <parametros> , <tipagem> <identificador>
+                | e
 
-<posDeclaracao> ::= { <declaracoesVariaveis> <conjuntoSetencas> }
+<declaracoesVariaveis> ::= <tipagem> <identificador> ; 
 
-<conjuntoSetencas> ::= <sentenca> <conjuntoSetencas> | e
+<posDeclaracao> ::= { <declaracoesVariaveisLocais> <sentencaLista> }
+
+<declaracoesVariaveisLocais> ::= <declaracoesVariaveisLocais> <declaracoesVariaveis>
+                               | e 
+
+<sentencaLista> ::=  <sentencaLista> <sentenca> | e
 
 <sentenca> ::= <condicionalSentenca>
             | <iteracaoSentenca>
             | <returnSentenca>
             | <leituraEscritaSentenca>
-            | <expressoesSenteca> 
-            | <conjSetenca>
+            | <chamaFuncoes>
+            | <expressoesSentenca> 
+            | <conjuntoSentenca>
             
 
-<condicionalSentenca> ::= if ( <expressao> ) <sentenca>
-                        | if ( <expressao> ) <sentenca> else <sentenca>
+<condicionalSentenca> ::= if ( <expressaoSimplificada> ) <posDeclaracao>
+                         | if ( <expressaoSimplificada> ) <posDeclaracao> else <posDeclaracao>
 
+
+<expressaoSimplificada> ::= <expressaoOperacao> <operacaoComparacao> <expressaoOperacao> 
+                      | <expressaoOperacao>
+
+
+<iteracaoSentenca> ::= for ( <expressao> ; <expressaoSimplificada> ; <expressao> ) <posDeclaracao>
 
 <expressao> ::= <identificador> = <expressao> 
-               | <expressaoSimples>
-               | <expressaoConjunto>
+               | <expressaoSimplificada> ;
 
+<returnSentenca> ::= return <expressaoSimplificada> ; 
+                    | return ;
 
-<operacoesConjunto> ::= add ( <elemento>)
-                  | remove ( <elemento>)
-                  | exists ( <elemento> in <elemento> )
-
-
-<iteracaoSentenca> ::= for ( {<expressao>}? ; {<expressao>}? ; {<expressao>}? ) <setenca>
-
-<returnSentenca> ::= return {<expressao>}? ;
-
-<leituraEscritaSentenca> ::= write (<letra>)
-                            | writeln (<letra>)
+<leituraEscritaSentenca> ::= write (STRING)
+                            | writeln (STRING)
                             | read (<identificador>)
 
-<expressoesSenteca> ::=  <expressao> ; 
-                        | ;                          
+<chamaFuncoes> ::= <identificador> (<argumentos>)
 
-<conjSetenca> ::= forall ( <expressaoIn> ) <setenca> 
-                  | is_set ( <identificador> )
+<argumentos> ::= <argumentosLista> 
+                | e 
 
-<expressaoIn> ::= <expressao> " in " <expressaoConjunto>
-                  | <expressao> " in " <identificador>
+<argumentosLista> ::= <expressaoSimplificada> 
+                     | <expressaoSimplificada>, <argumentosLista>
+                     | expressaoSimplificada   
 
-<expressaoConjunto> ::= { <grupoElemento> } 
-                   | <operacoesConjunto>
+<expressoesSentenca> ::= <identificador> <expressao> 
+                       | <expressaoSimplificada> ;                          
 
-<grupoElemento> ::= <elemento> , <grupoElemento> 
-                 | <elemento>
+<conjuntoSentenca> ::= ADD ( <conjuntoBoleano> ) ;
+                      | REMOVE ( <conjuntoBoleano>) ;
+                      | FORALL(<conjuntoExpressaoForallExists>) <sentenca> ;
+                      | IS_SET(<identificador>) ;
+                      | EXISTS (<conjuntoExpressaoForallExists>) <sentenca> ;
 
-<elemento> ::= <identificador> 
-         | <inteiro> 
-         | <decimal>
+<conjuntoBoleano> ::= <expressao> IN <conjuntoSentenca>
+                     | <expressao> IN <identificador>
 
-<expressaoSimples> ::= <expressaoOperacao> <operacaoComparacao> <expressaoOperacao> 
-                        | <expressaoOperacao>
-
-
+<conjuntoExpressaoForallExists> ::= <identificador> IN <conjuntoSentenca>
+                             | <identificador> IN <identificador>    
+                   
 <expressaoOperacao> ::= <expressaoOperacao> <operacaoNumerica> <termo>
-                        | <expressaoOperacao> <operacaoLogic> <termo>
-                        | <termo>
+                       | <expressaoOperacao> <operacaoLogic> <termo>
+                       | <termo>
 
 <operacaoComparacao> ::=  ==
                         |!=
@@ -91,14 +100,14 @@
                     | &&
                     | !
 
-<termo> ::= (<expressaoSimples>)
+<termo> ::= (<expressaoSimplificada>)
     |<identificador>
-    |<digito>
-    |<digito>.<digito>
-    | EMPTY
+    | INT
+    | FLOAT
+    | EMPTY_LABEL
+    | OPEN_QUOTE STRING CLOSE_QUOTE
 
 
-<identificador> ::= (<sublinhado>|<letra>)+(<letra>|<digito>|<sublinhado>)*
 
 <letra> ::= [a-zA-Z] <letra>
             | e
