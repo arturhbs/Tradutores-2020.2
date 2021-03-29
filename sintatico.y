@@ -18,10 +18,11 @@ extern FILE *yyin;
 
 
 %token TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
-%token ID INT FLOAT STRING EMPTY_LABEL QUOTES
-%token IF ELSE 
+%token ID INT FLOAT STRING EMPTY_LABEL QUOTES ASSING
+%token IF ELSE FOR RETURN
 %token COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
 %token OR AND NEGATIVE MULT DIV ADD SUB
+%token OUT_WRITELN OUT_WRITE IN_READ
 %%
 
 tradutor: declaracoesExtenas  {printf("<tradutor> <== <declaracoesExternas>\n");}
@@ -47,10 +48,10 @@ parametros: parametros ',' tipagem ID {printf("<parametros> <== <parametros> , <
 posDeclaracao:  '{' declaracoesVariaveisLocais sentencaLista '}' {printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");}
 ; 
 
-tipagem: TYPE_INT {printf("<tipagem> <== TYPE_INT\n");}
+tipagem: TYPE_INT   {printf("<tipagem> <== TYPE_INT\n");}
        | TYPE_FLOAT {printf("<tipagem> <== TYPE_FLOAT\n");}
-       | TYPE_ELEM {printf("<tipagem> <== TYPE_ELEM\n");}
-       | TYPE_SET  {printf("<tipagem> <== TYPE_SET\n");}
+       | TYPE_ELEM  {printf("<tipagem> <== TYPE_ELEM\n");}
+       | TYPE_SET   {printf("<tipagem> <== TYPE_SET\n");}
 ;          
 
 declaracoesVariaveisLocais: declaracoesVariaveisLocais declaracoesVariaveis {printf("<declaracoesVariaveisLocais> <== <declaracoesVariaveisLocais> <declaracoesVariaveis>\n");}
@@ -61,12 +62,31 @@ sentencaLista: sentencaLista sentenca {printf("<sentencaLista> <== <sentencaList
              | %empty {printf("<sentencaLista> <== E\n");}
 ;
 
-sentenca: condicionalSentenca {printf("<sentenca> <== <condicionalSentenca>\n");}
+sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n");}
+        | iteracaoSentenca       {printf("<sentenca> <== <iteracaoSentenca>\n");}
+        | returnSentenca         {printf("<sentenca> <== <returnSentenca>\n");}
+        | leituraEscritaSentenca {printf("<sentenca> <== <leituraEscritaSentenca>\n");}
 ;
 
 condicionalSentenca: IF '(' expressaoSimplificada ')' posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao>\n");}
                    | IF '(' expressaoSimplificada ')' posDeclaracao ELSE posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao> ELSE posDeclaracao\n");}
 ;
+
+iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressao ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
+;
+
+returnSentenca: RETURN expressaoSimplificada ';'  {printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");}
+;
+
+leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");}
+                      | OUT_WRITELN '('STRING')' ';' {printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");}
+                      | IN_READ '('ID')' ';'         {printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");}
+;
+
+expressao: ID ASSING expressao {printf("<expressao> <== ID ASSING expressao\n");}
+         | expressaoSimplificada ';' {printf("<expressao> <== expressaoSimplificada\n");}
+         | expressaoSimplificada {printf("<expressao> <== expressaoSimplificada\n");}
+;         
 
 expressaoSimplificada: expressaoOperacao operacaoComparacao expressaoOperacao {printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");}
                      | expressaoOperacao     {printf("<expressaoSimplificada> <== <expressaoOperacao>\n");}
@@ -103,6 +123,7 @@ operacaoComparacao: COMPARABLES_EQUAL {printf("<operacaoComparacao> <== COMPARAB
                   | COMPARABLES_LT {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
                   | COMPARABLES_GT {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
 ;                        
+
 
 %%      
 

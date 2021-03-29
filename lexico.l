@@ -35,12 +35,11 @@ MULT_DIV "*"|"/"
 ASSING "="
 LOGIC "||"|"&&"|"!"
 COMPARABLES "=="|"!="|"<="|">="|"<"|">"
-QUOTES \"|\'
 COMMENT "//"
 UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
-STRING  "(LETTER|DIGIT)*"|'(LETTER|DIGIT)*'
+STRING \"[^\"]*\"|'[^']*'
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
@@ -127,15 +126,15 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | OUTINPUT = '%s'\n", currentLine, positionWord, yytext);
     if(strcmp(yytext,"writeln")==0){
-        //return OUT_WRITELN;
+        return OUT_WRITELN;
     }
     else{
         if(strcmp(yytext,"write")==0){
-            //return OUT_WRITE;
+            return OUT_WRITE;
         }
         else{
             if(strcmp(yytext,"read")){
-                //return IN_READ;
+                return IN_READ;
             }
         }
     }
@@ -157,13 +156,13 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {FOR} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | FOR = '%s'\n", currentLine, positionWord, yytext );
-    //return FOR;
+    return FOR;
 }
 
 {RETURN} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | RETURN = '%s'\n", currentLine, positionWord, yytext );
-    //return RETURN;
+    return RETURN;
 }
 
 {STRING} {
@@ -203,7 +202,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {ASSING} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | ASSING = '%s'\n", currentLine, positionWord, yytext );
-    //return ASSING;
+    return ASSING;
 }
 
 {LOGIC} {
@@ -258,11 +257,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 
-{QUOTES} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | QUOTES = '%s'\n", currentLine, positionWord, yytext);
-    return QUOTES;
-}
 
 {COMMENT}.* {
     //printf("Line %d | Position %d | CLOSE_CURLY = '%s'\n", currentLine, positionWord, yytext);
