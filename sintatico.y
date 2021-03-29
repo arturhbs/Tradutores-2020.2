@@ -66,13 +66,15 @@ sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n
         | iteracaoSentenca       {printf("<sentenca> <== <iteracaoSentenca>\n");}
         | returnSentenca         {printf("<sentenca> <== <returnSentenca>\n");}
         | leituraEscritaSentenca {printf("<sentenca> <== <leituraEscritaSentenca>\n");}
+        | chamaFuncoes           {printf("<sentenca> <== <chamaFuncoes>\n");}
+        | expressao              {printf("<sentenca> <== <expressao>\n");}
 ;
 
 condicionalSentenca: IF '(' expressaoSimplificada ')' posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao>\n");}
                    | IF '(' expressaoSimplificada ')' posDeclaracao ELSE posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao> ELSE posDeclaracao\n");}
 ;
 
-iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressao ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
+iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
 ;
 
 returnSentenca: RETURN expressaoSimplificada ';'  {printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");}
@@ -83,10 +85,24 @@ leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSen
                       | IN_READ '('ID')' ';'         {printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");}
 ;
 
+chamaFuncoes: ID '(' argumentos ')' ';' {printf("<chamaFuncoes> <== ID '(' argumentos ')'\n");}
+;
+
+argumentos: argumentosLista {printf("<argumentos> <== <argumentosLista>\n");}
+          | %empty          {printf("<argumentos> <== E\n");}
+;
+
+argumentosLista: expressaoSimplificada                     {printf("<argumentosLista> <== <expressaoSimplificada>\n");}
+               | expressaoSimplificada ',' argumentosLista {printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");}
+;
+
 expressao: ID ASSING expressao {printf("<expressao> <== ID ASSING expressao\n");}
          | expressaoSimplificada ';' {printf("<expressao> <== expressaoSimplificada\n");}
-         | expressaoSimplificada {printf("<expressao> <== expressaoSimplificada\n");}
+         
 ;         
+expressaoFor: ID ASSING expressaoFor {printf("<expressaoFor> <== ID ASSING expressaoFor\n");}
+             |expressaoSimplificada {printf("<expressaoFor> <== expressaoSimplificada\n");} 
+;
 
 expressaoSimplificada: expressaoOperacao operacaoComparacao expressaoOperacao {printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");}
                      | expressaoOperacao     {printf("<expressaoSimplificada> <== <expressaoOperacao>\n");}
