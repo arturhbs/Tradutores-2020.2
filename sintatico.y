@@ -16,42 +16,93 @@ extern FILE *yyin;
   struct nodeTree* nodeTree;
 }
 
-%token OPEN_CURLY CLOSE_CURLY OPEN_PARENTESES CLOSE_PARENTESES OPEN_BRACKETS CLOSE_BRACKETS
-%token <str> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
-%token <str> ID
 
+%token TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
+%token ID INT FLOAT STRING EMPTY_LABEL QUOTES
+%token IF ELSE 
+%token COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
+%token OR AND NEGATIVE MULT DIV ADD SUB
 %%
-tradutor: declaracoesExtenas  {printf("<TRADUTORES>\n");}
+
+tradutor: declaracoesExtenas  {printf("<tradutor> <== <declaracoesExternas>\n");}
 ;
 
-declaracoesExtenas: declaracoesExtenas funcoes {printf("<DECLARACOESEXTERNAS> <FUNCOES>\n");}
-                    | declaracoesExtenas declaracoesVariaveis {printf("<DECLARACOESEXTERNASA> <DECLARACOESVARIAVEIS>\n");}
-                    | funcoes {printf("<FUNCOES>\n");}
-                    | declaracoesVariaveis {printf("<DECLARACAOVARIAVEIS>\n");}
-                     
+declaracoesExtenas: funcoes {printf("<declaracoesExternas> <==  <funcoes>\n");}
+                  | declaracoesVariaveis {printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");}
+                  | declaracoesExtenas funcoes {printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");}
+                  | declaracoesExtenas declaracoesVariaveis {printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");}
 ;                     
 
-funcoes: tipagem ID  OPEN_PARENTESES parametros CLOSE_PARENTESES posDeclaracao {printf("funcoes\n");}
+declaracoesVariaveis: tipagem ID ';' {printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");}
 ;
 
-parametros: parametroLista | %empty {printf("<PARAMETROS>\n");}
-;
-parametroLista: declaracoesVariaveis
-              | parametros ',' declaracoesVariaveis
+funcoes: tipagem ID '(' parametros ')' posDeclaracao {printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");}
 ;
 
-posDeclaracao: OPEN_CURLY declaracoesVariaveis CLOSE_CURLY {printf("<POSDECLARACAO>\n");}
+parametros: parametros ',' tipagem ID {printf("<parametros> <== <parametros> , <tipagem> ID\n");}
+          | tipagem ID {printf("<parametros> <== <tipagem> ID\n");}
+          | %empty {printf("<parametros> <== E\n");}
+;
+
+posDeclaracao:  '{' declaracoesVariaveisLocais sentencaLista '}' {printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");}
 ; 
 
-tipagem: TYPE_INT {printf("TipoInt\n");}
-          | TYPE_FLOAT {printf("TipoFloat\n");}
-          | TYPE_ELEM {printf("TipoElement\n");}
-          | TYPE_SET  {printf("TipoSet\n");}
+tipagem: TYPE_INT {printf("<tipagem> <== TYPE_INT\n");}
+       | TYPE_FLOAT {printf("<tipagem> <== TYPE_FLOAT\n");}
+       | TYPE_ELEM {printf("<tipagem> <== TYPE_ELEM\n");}
+       | TYPE_SET  {printf("<tipagem> <== TYPE_SET\n");}
 ;          
 
-declaracoesVariaveis: tipagem ID ';' | tipagem ID  {printf("variable\n");} 
+declaracoesVariaveisLocais: declaracoesVariaveisLocais declaracoesVariaveis {printf("<declaracoesVariaveisLocais> <== <declaracoesVariaveisLocais> <declaracoesVariaveis>\n");}
+                          | %empty  {printf("<declaracoesVariaveis> <== variable\n");} 
 ;
 
+sentencaLista: sentencaLista sentenca {printf("<sentencaLista> <== <sentencaLista> <sentenca>\n");}
+             | %empty {printf("<sentencaLista> <== E\n");}
+;
+
+sentenca: condicionalSentenca {printf("<sentenca> <== <condicionalSentenca>\n");}
+;
+
+condicionalSentenca: IF '(' expressaoSimplificada ')' posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao>\n");}
+                   | IF '(' expressaoSimplificada ')' posDeclaracao ELSE posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao> ELSE posDeclaracao\n");}
+;
+
+expressaoSimplificada: expressaoOperacao operacaoComparacao expressaoOperacao {printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");}
+                     | expressaoOperacao     {printf("<expressaoSimplificada> <== <expressaoOperacao>\n");}
+;
+
+expressaoOperacao: expressaoOperacao operacaoNumerica termo {printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");}
+                 | expressaoOperacao operacaoLogic termo    {printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");}
+                 | termo                                    {printf("<operacaoNumerica> <== <termo>\n");}
+;
+
+operacaoNumerica: ADD  {printf("<operacaoNumerica> <== ADD\n");}
+                | SUB  {printf("<operacaoNumerica> <== SUB\n");}
+                | MULT {printf("<operacaoNumerica> <== MULT\n");}
+                | DIV  {printf("<operacaoNumerica> <== DIV\n");}
+;    
+
+operacaoLogic: OR {printf("<operacaoLogic> <== OR\n");}
+             | AND {printf("<operacaoLogic> <== AND\n");}
+             | NEGATIVE {printf("<operacaoLogic> <== NEGATIVE\n");}
+;
+
+termo: '(' expressaoSimplificada ')' {printf("<termo> <== '(' <expressaoSimplificada> ')'\n");}
+     | ID {printf("<termo> <== ID\n");}
+     | INT {printf("<termo> <== INT\n");}
+     | FLOAT {printf("<termo> <== FLOAT\n");}
+     | EMPTY_LABEL {printf("<termo> <== EMPTY_LABEL\n");}
+     | QUOTES STRING QUOTES {printf("<termo> <== QUOTES STRING QUOTES\n");}
+;
+
+operacaoComparacao: COMPARABLES_EQUAL {printf("<operacaoComparacao> <== COMPARABLES_EQUAL\n");}
+                  | COMPARABLES_DIFF {printf("<operacaoComparacao> <== COMPARABLES_DIFF\n");}
+                  | COMPARABLES_LTE {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
+                  | COMPARABLES_GTE {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
+                  | COMPARABLES_LT {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
+                  | COMPARABLES_GT {printf("<operacaoComparacao> <== COMPARABLES_GT\n");}
+;                        
 
 %%      
 
