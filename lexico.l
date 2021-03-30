@@ -85,27 +85,27 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | SET_COMMANDS = '%s' \n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"add")==0){
-        //return SET_ADD;
+        return SET_ADD;
     }
     else{
         if(strcmp(yytext,"remove")==0){
-            //return SET_REMOVE;
+            return SET_REMOVE;
         }
         else{
             if(strcmp(yytext,"forall")){
-                //return SET_FORALL;
+                return SET_FORALL;
             }
             else{
                 if(strcmp(yytext,"is_set")==0){
-                    //return SET_IS_SET;
+                    return SET_IS_SET;
                 }
                 else{
                     if(strcmp(yytext,"in")==0){
-                        //return SET_IN;
+                        return SET_IN;
                     }
                     else{
                         if(strcmp(yytext,"exists")==0){
-                            //return SET_EXISTS;
+                            return SET_EXISTS;
                         }
                     }
                 }

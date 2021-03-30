@@ -23,6 +23,7 @@ extern FILE *yyin;
 %token COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
 %token OR AND NEGATIVE MULT DIV ADD SUB
 %token OUT_WRITELN OUT_WRITE IN_READ
+%token SET_IN SET_ADD SET_REMOVE SET_FORALL SET_IS_SET SET_EXISTS
 %%
 
 tradutor: declaracoesExtenas  {printf("<tradutor> <== <declaracoesExternas>\n");}
@@ -68,10 +69,19 @@ sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n
         | leituraEscritaSentenca {printf("<sentenca> <== <leituraEscritaSentenca>\n");}
         | chamaFuncoes           {printf("<sentenca> <== <chamaFuncoes>\n");}
         | expressao              {printf("<sentenca> <== <expressao>\n");}
+        | conjuntoSentenca       {printf("<sentenca> <== <conjuntoSentenca>\n");}
 ;
 
-condicionalSentenca: IF '(' expressaoSimplificada ')' posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao>\n");}
-                   | IF '(' expressaoSimplificada ')' posDeclaracao ELSE posDeclaracao {printf("<condicionalSentenca> <== IF '(' <expressaoSimplificada> ')' <posDeclaracao> ELSE posDeclaracao\n");}
+condicionalSentenca: IF '(' condicaoIF ')' posIF {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");}
+                   | IF '(' condicaoIF ')' posIF ELSE posIF {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");}
+;
+
+condicaoIF: ID '(' argumentos ')'
+          | expressaoSimplificada
+;
+
+posIF: posDeclaracao
+      |sentenca
 ;
 
 iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
@@ -94,6 +104,21 @@ argumentos: argumentosLista {printf("<argumentos> <== <argumentosLista>\n");}
 
 argumentosLista: expressaoSimplificada                     {printf("<argumentosLista> <== <expressaoSimplificada>\n");}
                | expressaoSimplificada ',' argumentosLista {printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");}
+;
+
+conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')' ';'                          {printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoBoleano ')' ';'\n");}
+                | SET_REMOVE '(' conjuntoBoleano')' ';'                        {printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoBoleano')' ';' \n");}
+                | SET_FORALL'('conjuntoExpressaoForallExists ')' sentencaLista ';'  {printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
+                | SET_IS_SET '(' ID ')' ';'                                    {printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");}      
+                | SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';' {printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
+;
+
+conjuntoBoleano: expressao SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
+               | expressao SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
+;                    
+
+conjuntoExpressaoForallExists: ID SET_IN conjuntoSentenca   {printf("<conjuntoExpressaoForallExists> <== ID SET_IN conjuntoSentenca\n");}
+                             | ID SET_IN ID                 {printf("<conjuntoExpressaoForallExists> <== ID SET_IN ID\n");}
 ;
 
 expressao: ID ASSING expressao {printf("<expressao> <== ID ASSING expressao\n");}
