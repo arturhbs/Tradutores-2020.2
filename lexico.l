@@ -92,7 +92,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
             return SET_REMOVE;
         }
         else{
-            if(strcmp(yytext,"forall")){
+            if(strcmp(yytext,"forall")==0){
                 return SET_FORALL;
             }
             else{

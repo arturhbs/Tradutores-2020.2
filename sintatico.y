@@ -110,11 +110,11 @@ conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')' ';'                          {
                 | SET_REMOVE '(' conjuntoBoleano')' ';'                        {printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoBoleano')' ';' \n");}
                 | SET_FORALL'('conjuntoExpressaoForallExists ')' sentencaLista ';'  {printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
                 | SET_IS_SET '(' ID ')' ';'                                    {printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");}      
-                | SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';' {printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
+                | SET_EXISTS '('conjuntoExpressaoForallExists ')' sentencaLista ';' {printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
 ;
 
-conjuntoBoleano: expressao SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
-               | expressao SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
+conjuntoBoleano: expressaoSimplificada SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
+               | expressaoSimplificada SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
 ;                    
 
 conjuntoExpressaoForallExists: ID SET_IN conjuntoSentenca   {printf("<conjuntoExpressaoForallExists> <== ID SET_IN conjuntoSentenca\n");}
