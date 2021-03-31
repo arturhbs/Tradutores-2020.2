@@ -24,6 +24,8 @@ extern FILE *yyin;
 %token OR AND NEGATIVE MULT DIV ADD SUB
 %token OUT_WRITELN OUT_WRITE IN_READ
 %token SET_IN SET_ADD SET_REMOVE SET_FORALL SET_IS_SET SET_EXISTS
+
+%right THEN ELSE
 %%
 
 tradutor: declaracoesExtenas  {printf("<tradutor> <== <declaracoesExternas>\n");}
@@ -46,7 +48,7 @@ parametros: parametros ',' tipagem ID {printf("<parametros> <== <parametros> , <
           | %empty {printf("<parametros> <== E\n");}
 ;
 
-posDeclaracao:  '{' declaracoesVariaveisLocais sentencaLista '}' {printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");}
+posDeclaracao:  '{' sentencaLista '}' {printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");}
 ; 
 
 tipagem: TYPE_INT   {printf("<tipagem> <== TYPE_INT\n");}
@@ -54,10 +56,6 @@ tipagem: TYPE_INT   {printf("<tipagem> <== TYPE_INT\n");}
        | TYPE_ELEM  {printf("<tipagem> <== TYPE_ELEM\n");}
        | TYPE_SET   {printf("<tipagem> <== TYPE_SET\n");}
 ;          
-
-declaracoesVariaveisLocais: declaracoesVariaveisLocais declaracoesVariaveis {printf("<declaracoesVariaveisLocais> <== <declaracoesVariaveisLocais> <declaracoesVariaveis>\n");}
-                          | %empty  {printf("<declaracoesVariaveis> <== variable\n");} 
-;
 
 sentencaLista: sentencaLista sentenca {printf("<sentencaLista> <== <sentencaLista> <sentenca>\n");}
              | %empty {printf("<sentencaLista> <== E\n");}
@@ -70,18 +68,19 @@ sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n
         | chamaFuncoes           {printf("<sentenca> <== <chamaFuncoes>\n");}
         | expressao              {printf("<sentenca> <== <expressao>\n");}
         | conjuntoSentenca       {printf("<sentenca> <== <conjuntoSentenca>\n");}
+        | declaracoesVariaveis   {printf("<sentenca> <== <declaracoesVariaveis>\n");}
 ;
 
-condicionalSentenca: IF '(' condicaoIF ')' posIF {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");}
+condicionalSentenca: IF '(' condicaoIF ')' posIF %prec THEN {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");}
                    | IF '(' condicaoIF ')' posIF ELSE posIF {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");}
 ;
 
-condicaoIF: ID '(' argumentos ')'
-          | expressaoSimplificada
+condicaoIF: ID '(' argumentos ')' 
+          | expressaoSimplificada 
 ;
 
-posIF: posDeclaracao
-      |sentenca
+posIF: posDeclaracao  
+     | sentenca       
 ;
 
 iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
@@ -93,6 +92,7 @@ returnSentenca: RETURN expressaoSimplificada ';'  {printf("<returnSentenca> <== 
 leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");}
                       | OUT_WRITELN '('STRING')' ';' {printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");}
                       | IN_READ '('ID')' ';'         {printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");}
+                      
 ;
 
 chamaFuncoes: ID '(' argumentos ')' ';' {printf("<chamaFuncoes> <== ID '(' argumentos ')'\n");}
@@ -115,6 +115,8 @@ conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')' ';'                          {
 
 conjuntoBoleano: expressaoSimplificada SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
                | expressaoSimplificada SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
+               | '('conjuntoSentenca ')' SET_IN ID 
+               | conjuntoSentenca SET_IN ID 
 ;                    
 
 conjuntoExpressaoForallExists: ID SET_IN conjuntoSentenca   {printf("<conjuntoExpressaoForallExists> <== ID SET_IN conjuntoSentenca\n");}
