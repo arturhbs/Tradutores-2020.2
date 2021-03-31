@@ -67,26 +67,38 @@ sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n
         | leituraEscritaSentenca {printf("<sentenca> <== <leituraEscritaSentenca>\n");}
         | chamaFuncoes           {printf("<sentenca> <== <chamaFuncoes>\n");}
         | expressao              {printf("<sentenca> <== <expressao>\n");}
-        | conjuntoSentenca       {printf("<sentenca> <== <conjuntoSentenca>\n");}
+        | conjuntoSentenca   ';'    {printf("<sentenca> <== <conjuntoSentenca>\n");}
         | declaracoesVariaveis   {printf("<sentenca> <== <declaracoesVariaveis>\n");}
+        | conjuntoForall
 ;
 
-condicionalSentenca: IF '(' condicaoIF ')' posIF %prec THEN {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");}
-                   | IF '(' condicaoIF ')' posIF ELSE posIF {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");}
+conjuntoForall:  SET_FORALL'('conjuntoBoleano ')' posIFForallExists  {printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
+;
+
+condicionalSentenca: IF '(' condicaoIF ')' posIFForallExists %prec THEN {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");}
+                   | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");}
 ;
 
 condicaoIF: ID '(' argumentos ')' 
           | expressaoSimplificada 
+          | conjuntoBoleano
+          | conjuntoSentenca
+          | NEGATIVE ID '(' argumentos ')' 
+          | NEGATIVE expressaoSimplificada 
+          | NEGATIVE conjuntoBoleano
+          | NEGATIVE conjuntoSentenca
+          
 ;
 
-posIF: posDeclaracao  
-     | sentenca       
+posIFForallExists: posDeclaracao  
+                  | sentenca       
 ;
 
 iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
 ;
 
-returnSentenca: RETURN expressaoSimplificada ';'  {printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");}
+returnSentenca: RETURN conjuntoSentenca  ';'  {printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");}
+              | RETURN expressaoSimplificada ';'
 ;
 
 leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");}
@@ -96,6 +108,7 @@ leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSen
 ;
 
 chamaFuncoes: ID '(' argumentos ')' ';' {printf("<chamaFuncoes> <== ID '(' argumentos ')'\n");}
+            | ID ASSING ID '(' argumentos ')' ';'
 ;
 
 argumentos: argumentosLista {printf("<argumentos> <== <argumentosLista>\n");}
@@ -106,22 +119,18 @@ argumentosLista: expressaoSimplificada                     {printf("<argumentosL
                | expressaoSimplificada ',' argumentosLista {printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");}
 ;
 
-conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')' ';'                          {printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoBoleano ')' ';'\n");}
-                | SET_REMOVE '(' conjuntoBoleano')' ';'                        {printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoBoleano')' ';' \n");}
-                | SET_FORALL'('conjuntoExpressaoForallExists ')' sentencaLista ';'  {printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
-                | SET_IS_SET '(' ID ')' ';'                                    {printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");}      
-                | SET_EXISTS '('conjuntoExpressaoForallExists ')' sentencaLista ';' {printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
+conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')'                           {printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoBoleano ')' ';'\n");}
+                | SET_REMOVE '(' conjuntoBoleano')'                        {printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoBoleano')' ';' \n");}
+                | SET_IS_SET '(' ID ')'                                     {printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");}      
+                | SET_EXISTS '('conjuntoBoleano ')'  {printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");}
 ;
 
 conjuntoBoleano: expressaoSimplificada SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
                | expressaoSimplificada SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
                | '('conjuntoSentenca ')' SET_IN ID 
-               | conjuntoSentenca SET_IN ID 
+               | conjuntoSentenca SET_IN ID
+               | ID '(' argumentos ')' SET_IN ID
 ;                    
-
-conjuntoExpressaoForallExists: ID SET_IN conjuntoSentenca   {printf("<conjuntoExpressaoForallExists> <== ID SET_IN conjuntoSentenca\n");}
-                             | ID SET_IN ID                 {printf("<conjuntoExpressaoForallExists> <== ID SET_IN ID\n");}
-;
 
 expressao: ID ASSING expressao {printf("<expressao> <== ID ASSING expressao\n");}
          | expressaoSimplificada ';' {printf("<expressao> <== expressaoSimplificada\n");}
