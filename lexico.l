@@ -242,7 +242,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
                     return COMPARABLES_GTE;
                 }
                 else{
-                    if(strcmp(yytext,"<")){
+                    if(strcmp(yytext,"<")==0){
                         return COMPARABLES_LT;
                     }
                     else{
