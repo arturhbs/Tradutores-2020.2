@@ -4,40 +4,75 @@
 
 %{
 #include <stdio.h>
+#include "ut_hash.h"
 int yylex();
 extern void yyerror(const char *string);
 extern int yylex_destroy();
 extern FILE *yyin;
+int DEBUG = 0; 
+
+// árvore sintática
+struct nodeTree {
+  char *nameNode;
+  char *symbolName;
+  char *symbolType;
+  struct nodeTree *firstnode;
+  struct nodeTree *secondnode;
+  struct nodeTree *thirdnode;
+  struct nodeTree *fourthnode;
+};
+
+
+struct nodeTree* syntaticTree = NULL;
+struct nodeTree* addition_node( struct nodeTree *firstnode, struct nodeTree *secondnode, struct nodeTree *thirdnode, struct nodeTree *fourthnode, char * nameNode);
+
 
 %}
 
 %union {
-  char* string;
-  struct nodeTree* nodeTree;
+  char* string_node;
+  struct nodeTree* node;
 }
 
+%type <node> tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
+%type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
+%type <node> chamaFuncoes argumentos argumentosLista conjuntoSentenca conjuntoBoleano expressao expressaoFor expressaoSimplificada 
+%type <node> expressaoOperacao operacaoNumerica operacaoLogic termo operacaoComparacao
 
-%token TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
-%token ID INT FLOAT STRING EMPTY_LABEL QUOTES ASSING
-%token IF ELSE FOR RETURN
-%token COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
-%token OR AND NEGATIVE MULT DIV ADD SUB
-%token OUT_WRITELN OUT_WRITE IN_READ
-%token SET_IN SET_ADD SET_REMOVE SET_FORALL SET_IS_SET SET_EXISTS
+
+%token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
+%token <string_node> ID INT FLOAT STRING EMPTY_LABEL QUOTES ASSING
+%token <string_node> IF ELSE FOR RETURN
+%token <string_node> COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
+%token <string_node> OR AND NEGATIVE MULT DIV ADD SUB
+%token <string_node> OUT_WRITELN OUT_WRITE IN_READ
+%token <string_node> SET_IN SET_ADD SET_REMOVE SET_FORALL SET_IS_SET SET_EXISTS
 
 %right THEN ELSE
 %%
 
-tradutor: declaracoesExtenas  {printf("<tradutor> <== <declaracoesExternas>\n");}
+tradutor: declaracoesExtenas  {
+            printf("<tradutor> <== <declaracoesExternas>\n");
+            syntaticTree = $1;
+          }
 ;
 
-declaracoesExtenas: funcoes {printf("<declaracoesExternas> <==  <funcoes>\n");}
-                  | declaracoesVariaveis {printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");}
-                  | declaracoesExtenas funcoes {printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");}
-                  | declaracoesExtenas declaracoesVariaveis {printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");}
+declaracoesExtenas: funcoes {//if(DEBUG)printf("<declaracoesExternas> <==  <funcoes>%s\n",$1);
+                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas");
+                    }
+                  | declaracoesVariaveis {if(DEBUG)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
+                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas");
+                    }
+                  | declaracoesExtenas funcoes {printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
+                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas");
+                    }
+                  | declaracoesExtenas declaracoesVariaveis {if(DEBUG)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
+                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas");
+                    }
 ;                     
 
 declaracoesVariaveis: tipagem ID ';' {printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");}
+ 
 ;
 
 funcoes: tipagem ID '(' parametros ')' posDeclaracao {printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");}
@@ -67,7 +102,7 @@ sentenca: condicionalSentenca    {printf("<sentenca> <== <condicionalSentenca>\n
         | leituraEscritaSentenca {printf("<sentenca> <== <leituraEscritaSentenca>\n");}
         | chamaFuncoes           {printf("<sentenca> <== <chamaFuncoes>\n");}
         | expressao              {printf("<sentenca> <== <expressao>\n");}
-        | conjuntoSentenca   ';'    {printf("<sentenca> <== <conjuntoSentenca>\n");}
+        | conjuntoSentenca   ';' {printf("<sentenca> <== <conjuntoSentenca>\n");}
         | declaracoesVariaveis   {printf("<sentenca> <== <declaracoesVariaveis>\n");}
         | conjuntoForall
 ;
@@ -79,26 +114,25 @@ condicionalSentenca: IF '(' condicaoIF ')' posIFForallExists %prec THEN {printf(
                    | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");}
 ;
 
-condicaoIF: ID '(' argumentos ')' 
-          | expressaoSimplificada 
-          | conjuntoBoleano
-          | conjuntoSentenca
-          | NEGATIVE ID '(' argumentos ')' 
-          | NEGATIVE expressaoSimplificada 
-          | NEGATIVE conjuntoBoleano
-          | NEGATIVE conjuntoSentenca
-          
+condicaoIF: ID '(' argumentos ')' {}
+          | expressaoSimplificada {}
+          | conjuntoBoleano   {}
+          | conjuntoSentenca {}
+          | NEGATIVE ID '(' argumentos ')' {}
+          | NEGATIVE expressaoSimplificada {}
+          | NEGATIVE conjuntoBoleano {}
+          | NEGATIVE conjuntoSentenca {}         
 ;
 
-posIFForallExists: posDeclaracao  
-                  | sentenca       
+posIFForallExists: posDeclaracao  {}
+                  | sentenca       {}
 ;
 
 iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao {printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");}
 ;
 
 returnSentenca: RETURN conjuntoSentenca  ';'  {printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");}
-              | RETURN expressaoSimplificada ';'
+              | RETURN expressaoSimplificada ';' {}
 ;
 
 leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");}
@@ -108,7 +142,7 @@ leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   {printf("<leituraEscritaSen
 ;
 
 chamaFuncoes: ID '(' argumentos ')' ';' {printf("<chamaFuncoes> <== ID '(' argumentos ')'\n");}
-            | ID ASSING ID '(' argumentos ')' ';'
+            | ID ASSING ID '(' argumentos ')' ';' {}
 ;
 
 argumentos: argumentosLista {printf("<argumentos> <== <argumentosLista>\n");}
@@ -127,9 +161,9 @@ conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')'                           {pri
 
 conjuntoBoleano: expressaoSimplificada SET_IN conjuntoSentenca    {printf("<conjuntoBoleano> <== expressao SET_IN conjuntoSentenca\n");}
                | expressaoSimplificada SET_IN ID                  {printf("<conjuntoBoleano> <== expressao SET_IN ID \n");}
-               | '('conjuntoSentenca ')' SET_IN ID 
-               | conjuntoSentenca SET_IN ID
-               | ID '(' argumentos ')' SET_IN ID
+               | '('conjuntoSentenca ')' SET_IN ID  {}
+               | conjuntoSentenca SET_IN ID          {}
+               | ID '(' argumentos ')' SET_IN ID      {}
 ;                    
 
 expressao: ID ASSING expressao {printf("<expressao> <== ID ASSING expressao\n");}
@@ -178,6 +212,40 @@ operacaoComparacao: COMPARABLES_EQUAL {printf("<operacaoComparacao> <== COMPARAB
 
 
 %%      
+struct nodeTree * addition_node(struct nodeTree *firstnode, struct nodeTree *secondnode, struct nodeTree *thirdnode, struct nodeTree *fourthnode,  char * nameNode ){
+  struct nodeTree* node = (struct nodeTree*)malloc(sizeof(struct nodeTree));
+  node->nameNode = nameNode;
+  node->firstnode = firstnode;
+  node->secondnode = secondnode;
+  node->thirdnode = thirdnode;
+  node->fourthnode = fourthnode;
+  node->symbolName = NULL;
+  node->symbolType = NULL;
+
+  return node;
+}
+
+void show_tree( int positionTree, struct nodeTree *tree) {
+ 
+  for(int j=0;j<positionTree;j++){
+    printf("__");
+  }
+  if (tree) {
+    printf("| nameNode: %s  |", tree->nameNode);
+    if(tree->symbolName != NULL) {
+      printf("symbolName: %s |", tree->symbolName);
+    }
+    if(tree->symbolType != NULL) {
+      printf("symbolType: %s |", tree->symbolType);
+    }
+    printf("\n");
+    show_tree(positionTree+1, tree->firstnode );
+    show_tree(positionTree+1, tree->secondnode );
+    show_tree(positionTree+1, tree->thirdnode );
+    show_tree(positionTree+1, tree->fourthnode );
+
+  }
+}
 
 void yyerror(const char *string) {
     printf("yyerror= %s\n", string);
@@ -186,12 +254,13 @@ void yyerror(const char *string) {
 // Got from documentation flex https://westes.github.io/flex/manual/Simple-Examples.html#Simple-Examples
 int main( int argc, char **argv ){
   ++argv, --argc;
+  int begginTree = 0;
   if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
 
   yyparse();
   fclose(yyin);
   yylex_destroy();
-
+  show_tree(begginTree, syntaticTree); 
   return 0;
 }
 
