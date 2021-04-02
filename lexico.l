@@ -3,9 +3,9 @@
 Autor: Artur Henrique Brandão de Souza
 Matricula: 15/0118783
 Sistema Operacional: Ubuntu v.20.04
-Compilador: gcc v.9.3.0
+Compilador: gcc v.10.2.0
             flex v.2.6.4
-            bison v.3.5.1
+            bison v.3.7.6
 
 
 */
@@ -48,6 +48,8 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {INT} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | INT = '%s'\n", currentLine, positionWord, yytext);
+    // yylval.string_node = (char *) strdup(yytext);
+    yylval.string_node = (char *) strdup(yytext);
     return INT;
 }
 
@@ -55,6 +57,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {FLOAT} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | FLOAT = '%s'\n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
     return FLOAT;
 }
 
@@ -62,18 +65,22 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | INT = '%s'\n", currentLine, positionWord, yytext);
     if(strcmp(yytext, "int") == 0 ){
+        yylval.string_node = (char *) strdup(yytext);
         return TYPE_INT;
     }
     else{
         if(strcmp(yytext,"float") == 0){
+            yylval.string_node = (char *) strdup(yytext);
             return TYPE_FLOAT;
         }
         else{
             if(strcmp(yytext,"elem")==0){
+                yylval.string_node = (char *) strdup(yytext);
                 return TYPE_ELEM;
             }
             else{
                 if(strcmp(yytext,"set")==0){
+                    yylval.string_node = (char *) strdup(yytext);
                     return TYPE_SET;
                 }
             }
@@ -85,26 +92,32 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | SET_COMMANDS = '%s' \n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"add")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return SET_ADD;
     }
     else{
         if(strcmp(yytext,"remove")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return SET_REMOVE;
         }
         else{
             if(strcmp(yytext,"forall")==0){
+                yylval.string_node = (char *) strdup(yytext);
                 return SET_FORALL;
             }
             else{
                 if(strcmp(yytext,"is_set")==0){
+                    yylval.string_node = (char *) strdup(yytext);
                     return SET_IS_SET;
                 }
                 else{
                     if(strcmp(yytext,"in")==0){
+                        yylval.string_node = (char *) strdup(yytext);
                         return SET_IN;
                     }
                     else{
                         if(strcmp(yytext,"exists")==0){
+                            yylval.string_node = (char *) strdup(yytext);
                             return SET_EXISTS;
                         }
                     }
@@ -118,6 +131,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {EMPTY_LABEL} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | EMPTY = '%s'\n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
     return EMPTY_LABEL;
 }
 
@@ -126,14 +140,17 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | OUTINPUT = '%s'\n", currentLine, positionWord, yytext);
     if(strcmp(yytext,"writeln")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return OUT_WRITELN;
     }
     else{
         if(strcmp(yytext,"write")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return OUT_WRITE;
         }
         else{
             if(strcmp(yytext,"read")){
+                yylval.string_node = (char *) strdup(yytext);
                 return IN_READ;
             }
         }
@@ -144,30 +161,35 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {IF} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | IF = '%s' \n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);
     return IF;
 }
 
 {ELSE} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | ELSE = '%s'\n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);
     return ELSE;
 }
 
 {FOR} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | FOR = '%s'\n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);    
     return FOR;
 }
 
 {RETURN} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | RETURN = '%s'\n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);
     return RETURN;
 }
 
 {STRING} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | STRING = '%s' \n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
     return STRING;
 }
 
@@ -176,10 +198,12 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | ADD_SUB = '%s' \n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"+")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return ADD;
     }
     else{
         if(strcmp(yytext,"-")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return SUB;
         }
     }
@@ -190,10 +214,12 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | MULT_DIV = '%s'\n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"*")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return MULT;
     }
     else{
         if(strcmp(yytext,"/")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return DIV;
         }
     }
@@ -202,6 +228,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {ASSING} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | ASSING = '%s'\n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);
     return ASSING;
 }
 
@@ -209,14 +236,17 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | LOGIC = '%s' \n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"||")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return OR;
     }
     else{
         if(strcmp(yytext,"&&")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return AND;
         }
         else{
             if(strcmp(yytext,"!")==0){
+                yylval.string_node = (char *) strdup(yytext);
                 return NEGATIVE;
             }
         }
@@ -227,26 +257,32 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | COMPARABLES = '%s' \n", currentLine, positionWord, yytext );
     if(strcmp(yytext,"==")==0){
+        yylval.string_node = (char *) strdup(yytext);
         return COMPARABLES_EQUAL;
     }
     else{
         if(strcmp(yytext,"!=")==0){
+            yylval.string_node = (char *) strdup(yytext);
             return COMPARABLES_DIFF;
         }
         else{
             if(strcmp(yytext,"<=")==0){
+                yylval.string_node = (char *) strdup(yytext);
                 return COMPARABLES_LTE;
             }
             else{
                 if(strcmp(yytext,">=")==0){
+                    yylval.string_node = (char *) strdup(yytext);
                     return COMPARABLES_GTE;
                 }
                 else{
                     if(strcmp(yytext,"<")==0){
+                        yylval.string_node = (char *) strdup(yytext);
                         return COMPARABLES_LT;
                     }
                     else{
                         if(strcmp(yytext,">")==0){
+                            yylval.string_node = (char *) strdup(yytext);
                             return COMPARABLES_GT;
                         }
                     }
@@ -310,6 +346,8 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 {ID} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | ID = '%s'\n", currentLine, positionWord, yytext );
+    yylval.string_node = (char *) strdup(yytext);
+
     return ID;
 }
 

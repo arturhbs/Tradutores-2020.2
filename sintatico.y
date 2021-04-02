@@ -13,18 +13,19 @@ int DEBUG = 0;
 
 // árvore sintática
 struct nodeTree {
+  struct nodeTree *firstNode;
+  struct nodeTree *secondNode;
+  struct nodeTree *thirdNode;
+  struct nodeTree *fourthNode;
   char *nameNode;
-  char *symbolName;
-  char *symbolType;
-  struct nodeTree *firstnode;
-  struct nodeTree *secondnode;
-  struct nodeTree *thirdnode;
-  struct nodeTree *fourthnode;
+  char *firstSymbol;
+  char *secondSymbol;
+  char *thirdSymbol;
 };
 
 
 struct nodeTree* syntaticTree = NULL;
-struct nodeTree* addition_node( struct nodeTree *firstnode, struct nodeTree *secondnode, struct nodeTree *thirdnode, struct nodeTree *fourthnode, char * nameNode);
+struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
 
 
 %}
@@ -58,20 +59,22 @@ tradutor: declaracoesExtenas  {
 ;
 
 declaracoesExtenas: funcoes {//if(DEBUG)printf("<declaracoesExternas> <==  <funcoes>%s\n",$1);
-                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas");
+                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                     }
-                  | declaracoesVariaveis {if(DEBUG)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
-                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas");
+                  | declaracoesVariaveis {//if(DEBUG)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
+                      $$ = addition_node($1, NULL, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                     }
-                  | declaracoesExtenas funcoes {printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
-                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas");
+                  | declaracoesExtenas funcoes {//if(DEBUG)printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
+                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                     }
-                  | declaracoesExtenas declaracoesVariaveis {if(DEBUG)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
-                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas");
+                  | declaracoesExtenas declaracoesVariaveis {//if(DEBUG)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
+                      $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                     }
-;                     
+;
 
-declaracoesVariaveis: tipagem ID ';' {printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");}
+declaracoesVariaveis: tipagem ID ';' {printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");
+                                        $$ = addition_node($1, NULL, NULL, NULL, "declaracoesVariaveis", $2, NULL, NULL);
+                                     }
  
 ;
 
@@ -86,10 +89,18 @@ parametros: parametros ',' tipagem ID {printf("<parametros> <== <parametros> , <
 posDeclaracao:  '{' sentencaLista '}' {printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");}
 ; 
 
-tipagem: TYPE_INT   {printf("<tipagem> <== TYPE_INT\n");}
-       | TYPE_FLOAT {printf("<tipagem> <== TYPE_FLOAT\n");}
-       | TYPE_ELEM  {printf("<tipagem> <== TYPE_ELEM\n");}
-       | TYPE_SET   {printf("<tipagem> <== TYPE_SET\n");}
+tipagem: TYPE_INT   {printf("<tipagem> <== TYPE_INT\n");
+                      $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
+                    }
+       | TYPE_FLOAT {printf("<tipagem> <== TYPE_FLOAT\n");
+                      $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
+                    }
+       | TYPE_ELEM  {printf("<tipagem> <== TYPE_ELEM\n");
+                      $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
+                    }
+       | TYPE_SET   {printf("<tipagem> <== TYPE_SET\n");
+                      $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
+                    }
 ;          
 
 sentencaLista: sentencaLista sentenca {printf("<sentencaLista> <== <sentencaLista> <sentenca>\n");}
@@ -212,37 +223,44 @@ operacaoComparacao: COMPARABLES_EQUAL {printf("<operacaoComparacao> <== COMPARAB
 
 
 %%      
-struct nodeTree * addition_node(struct nodeTree *firstnode, struct nodeTree *secondnode, struct nodeTree *thirdnode, struct nodeTree *fourthnode,  char * nameNode ){
+
+
+struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol ){
   struct nodeTree* node = (struct nodeTree*)malloc(sizeof(struct nodeTree));
+  node->firstNode = firstNode;
+  node->secondNode = secondNode;
+  node->thirdNode = thirdNode;
+  node->fourthNode = fourthNode;
   node->nameNode = nameNode;
-  node->firstnode = firstnode;
-  node->secondnode = secondnode;
-  node->thirdnode = thirdnode;
-  node->fourthnode = fourthnode;
-  node->symbolName = NULL;
-  node->symbolType = NULL;
+  node->firstSymbol = firstSymbol;
+  node->secondSymbol = secondSymbol;
+  node->thirdSymbol = thirdSymbol;
 
   return node;
 }
 
+
 void show_tree( int positionTree, struct nodeTree *tree) {
- 
+  
   for(int j=0;j<positionTree;j++){
     printf("__");
   }
   if (tree) {
     printf("| nameNode: %s  |", tree->nameNode);
-    if(tree->symbolName != NULL) {
-      printf("symbolName: %s |", tree->symbolName);
+    if(tree->firstSymbol != NULL) {
+      printf("firstSymbol: %s ", tree->firstSymbol);
     }
-    if(tree->symbolType != NULL) {
-      printf("symbolType: %s |", tree->symbolType);
+    if(tree->secondSymbol != NULL) {
+      printf("secondSymbol: %s |", tree->secondSymbol);
+    }
+    if(tree->thirdSymbol != NULL) {
+      printf("thirdSymbol: %s |", tree->thirdSymbol);
     }
     printf("\n");
-    show_tree(positionTree+1, tree->firstnode );
-    show_tree(positionTree+1, tree->secondnode );
-    show_tree(positionTree+1, tree->thirdnode );
-    show_tree(positionTree+1, tree->fourthnode );
+    show_tree(positionTree+1, tree->firstNode );
+    show_tree(positionTree+1, tree->secondNode );
+    show_tree(positionTree+1, tree->thirdNode );
+    show_tree(positionTree+1, tree->fourthNode );
 
   }
 }
@@ -258,9 +276,10 @@ int main( int argc, char **argv ){
   if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
 
   yyparse();
+  printf("\n\n ####  Arvore Sintática  #### \n\n");
+  show_tree(begginTree, syntaticTree); 
   fclose(yyin);
   yylex_destroy();
-  show_tree(begginTree, syntaticTree); 
   return 0;
 }
 
