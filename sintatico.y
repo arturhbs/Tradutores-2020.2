@@ -34,7 +34,7 @@ struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *sec
   struct nodeTree* node;
 }
 
-%type <node> conjuntoIs_Set tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
+%type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
 %type <node>  argumentos argumentosLista conjuntoSentenca conjuntoBoleano expressao expressaoFor expressaoSimplificada 
 %type <node> expressaoOperacao operacaoNumerica operacaoLogic termo operacaoComparacao 
@@ -131,29 +131,20 @@ sentenca: condicionalSentenca    { if(DEBUG)printf("<sentenca> <== <condicionalS
         | leituraEscritaSentenca { if(DEBUG)printf("<sentenca> <== <leituraEscritaSentenca>\n");
                                    $$ = $1;
                                  }
-       
         | expressao              { if(DEBUG)printf("<sentenca> <== <expressao>\n");
                                    $$ = $1;
                                  }
-        | conjuntoSentenca ';'   { if(DEBUG)printf("<sentenca> <== <conjuntoSentenca>\n");
-                                   $$ = $1;
-                                 }
+        
         | declaracoesVariaveis   { if(DEBUG)printf("<sentenca> <== <declaracoesVariaveis>\n");
                                    $$ = $1;
                                  }
         | conjuntoForall         { if(DEBUG)printf("<sentenca> <== <conjuntoForall>\n");
                                    $$ = $1;
                                  }  
-        | conjuntoIs_Set         { if(DEBUG)printf("<sentenca> <== <conjuntoIs_Set>\n");
-                                   $$ = $1;
-                                 }  
+        
 ;
 
-conjuntoIs_Set: ID ASSING conjuntoSentenca ';' { if(DEBUG)printf("<conjuntoSentenca> <==  ID ASSING conjuntoSentenca ';'\n");
-                                                  $$ = addition_node($3, NULL, NULL, NULL, "conjuntoSentenca", $1, $2, NULL);
-                                                }
-            
-;
+
 conjuntoForall:  SET_FORALL'('conjuntoBoleano ')' posIFForallExists  { if(DEBUG)printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");
                                                                        $$ = addition_node($3, $5, NULL, NULL, "conjuntoSentenca", $1, NULL, NULL);
                                                                      }
@@ -174,9 +165,7 @@ condicaoIF:
           | conjuntoBoleano                 {if(DEBUG)printf("<condicaoIF> <== conjuntoBoleano\n");
                                               $$ = $1;                                                                                                                    
                                             }
-          | conjuntoSentenca                {if(DEBUG)printf("<condicaoIF> <== conjuntoSentenca\n");
-                                              $$ = $1;                                                                                                                    
-                                            }
+         
 
           | NEGATIVE expressaoSimplificada  {if(DEBUG)printf("<condicaoIF> <== NEGATIVE expressaoSimplificada\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                    
@@ -184,9 +173,7 @@ condicaoIF:
           | NEGATIVE conjuntoBoleano        {if(DEBUG)printf("<condicaoIF> <== NEGATIVE conjuntoBoleano\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                                                                
                                             }
-          | NEGATIVE conjuntoSentenca       {if(DEBUG)printf("<condicaoIF> <== NEGATIVE conjuntoSentenca\n");
-                                              $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                                                                
-                                            }   
+          
           | '(' conjuntoBoleano ')'      {}
 ;
 
@@ -203,10 +190,7 @@ iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')'
                                                                                                }
 ;
 
-returnSentenca: RETURN conjuntoSentenca ';'      { if(DEBUG)printf("<returnSentenca> <== RETURN conjuntoSentenca ';'\n");
-                                                   $$ = addition_node($2 ,NULL ,NULL ,NULL, "returnSentenca",$1 ,NULL ,NULL);                                                                                                                                                                                                                                                                                               
-                                                 }
-              | RETURN expressaoSimplificada ';' { if(DEBUG)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
+returnSentenca: RETURN expressaoSimplificada ';' { if(DEBUG)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
                                                    $$ = addition_node($2 ,NULL ,NULL ,NULL, "returnSentenca",$1 ,NULL ,NULL);                                                                                                                                                                                                                                                                                   
                                                  }
 ;
@@ -236,12 +220,7 @@ argumentosLista: expressaoSimplificada                      { if(DEBUG)printf("<
                |  argumentosLista ',' expressaoSimplificada { if(DEBUG)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
                                                               $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                      
                                                             }
-               | conjuntoSentenca                           { if(DEBUG)printf("<argumentosLista> <== <conjuntoSentenca>\n");
-                                                              $$ = $1;                                      
-                                                            }
-               | argumentosLista ',' conjuntoSentenca       { if(DEBUG)printf("<argumentosLista> <== <argumentosLista> ',' <conjuntoSentenca>\n");
-                                                              $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                      
-                                                            }
+     
 ;
 
 conjuntoSentenca: SET_ADD '(' conjuntoBoleano ')'    { if(DEBUG)printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoBoleano ')' ';'\n");
@@ -264,33 +243,25 @@ conjuntoBoleano: expressaoSimplificada SET_IN conjuntoSentenca    { if(DEBUG)pri
                | expressaoSimplificada SET_IN ID                  { if(DEBUG)printf("<conjuntoBoleano> <== expressaoSimplificada SET_IN ID\n");
                                                                     $$ = addition_node($1 ,NULL ,NULL ,NULL, "conjuntoBoleano", $2 ,$3 ,NULL);
                                                                   }
-               | '('conjuntoSentenca ')' SET_IN ID                { if(DEBUG)printf("<conjuntoBoleano> <== '('conjuntoSentenca ')' SET_IN ID \n");
-                                                                    $$ = addition_node($2 ,NULL ,NULL ,NULL, "conjuntoBoleano", $4 , $5 ,NULL);
-                                                                  }
-               | conjuntoSentenca SET_IN ID                       { if(DEBUG)printf("<conjuntoBoleano> <== conjuntoSentenca SET_IN ID  \n");
-                                                                    $$ = addition_node($1 ,NULL ,NULL ,NULL, "conjuntoBoleano", $2 , $3 ,NULL);
-                                                                  }
-              
-               | conjuntoSentenca SET_IN conjuntoSentenca         { if(DEBUG)printf("<conjuntoBoleano> <== conjuntoSentenca SET_IN conjuntoSentenca\n");
-                                                                    $$ = addition_node($1 , $3 ,NULL ,NULL, "conjuntoBoleano", $2 , NULL ,NULL);
-                                                                  }
+        
+           
 ;                    
 
 expressao: ID ASSING expressao        { if(DEBUG)printf("<expressao> <== ID ASSING expressao\n");
                                         $$ = addition_node($3 ,NULL ,NULL ,NULL, "expressao", $1 , $2 ,NULL); 
                                       }                                       
-         | expressaoSimplificada ';' { if(DEBUG)printf("<expressao> <== expressaoSimplificada\n");
-                                       $$ = $1; 
-                                     }
+         | expressaoSimplificada ';'  { if(DEBUG)printf("<expressao> <== expressaoSimplificada\n");
+                                        $$ = $1; 
+                                      }
 ;    
 
 expressaoFor: ID ASSING expressaoFor { if(DEBUG)printf("<expressaoFor> <== ID ASSING expressaoFor\n");
                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "expressaoFor", $1, $2 ,NULL);  
                                      }
-             |expressaoSimplificada { if(DEBUG)printf("<expressaoFor> <== expressaoSimplificada\n");
-                                      $$ = $1; 
-                                    } 
-;
+             |expressaoSimplificada  { if(DEBUG)printf("<expressaoFor> <== expressaoSimplificada\n");
+                                       $$ = $1; 
+                                     } 
+; 
 
 expressaoSimplificada: expressaoOperacao operacaoComparacao expressaoOperacao { if(DEBUG)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
                                                                                 $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
@@ -355,6 +326,8 @@ termo: '(' expressaoSimplificada ')' { if(DEBUG)printf("<termo> <== '(' <express
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, $2 ,$3);
                                      }
       | ID '(' argumentos')'         {}
+
+      | conjuntoSentenca        
 
 ;
 
