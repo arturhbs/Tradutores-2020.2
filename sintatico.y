@@ -9,7 +9,7 @@ int yylex();
 extern void yyerror(const char *string_node);
 extern int yylex_destroy();
 extern FILE *yyin;
-int DEBUG = 1; 
+int DEBUG = 0; 
 
 // Arvore sintatica
 struct nodeTree {
@@ -165,16 +165,15 @@ condicaoIF:
           | conjuntoBoleano                 {if(DEBUG)printf("<condicaoIF> <== conjuntoBoleano\n");
                                               $$ = $1;                                                                                                                    
                                             }
-         
-
           | NEGATIVE expressaoSimplificada  {if(DEBUG)printf("<condicaoIF> <== NEGATIVE expressaoSimplificada\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                    
                                             }
           | NEGATIVE conjuntoBoleano        {if(DEBUG)printf("<condicaoIF> <== NEGATIVE conjuntoBoleano\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                                                                
                                             }
-          
-          | '(' conjuntoBoleano ')'      {}
+          | '(' conjuntoBoleano ')'         { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+                                              $$ = $2;
+                                            }
 ;
 
 posIFForallExists: posDeclaracao  { if(DEBUG)printf("<posIFForallExists> <== posDeclaracao\n");
@@ -325,9 +324,12 @@ termo: '(' expressaoSimplificada ')' { if(DEBUG)printf("<termo> <== '(' <express
      | QUOTES STRING QUOTES          { if(DEBUG)printf("<termo> <== QUOTES STRING QUOTES\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, $2 ,$3);
                                      }
-      | ID '(' argumentos')'         {}
-
-      | conjuntoSentenca        
+      | ID '(' argumentos')'         { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+                                       $$ = addition_node($3 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                     }
+      | conjuntoSentenca             { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+                                       $$ = $1;
+                                     }
 
 ;
 
