@@ -9,7 +9,7 @@ int yylex();
 extern void yyerror(const char *string_node);
 extern int yylex_destroy();
 extern FILE *yyin;
-int DEBUG = 0; 
+int DEBUG = 1; 
 
 // Arvore sintatica
 struct nodeTree {
@@ -22,7 +22,6 @@ struct nodeTree {
   char *secondSymbol;
   char *thirdSymbol;
 };
-
 
 struct nodeTree* syntaticTree = NULL;
 struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
@@ -37,7 +36,7 @@ struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *sec
 %type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
 %type <node>  argumentos argumentosLista conjuntoSentenca conjuntoBoleano expressao expressaoFor expressaoSimplificada 
-%type <node> expressaoOperacao operacaoNumerica operacaoLogic termo operacaoComparacao 
+%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao 
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
@@ -262,23 +261,19 @@ expressaoFor: ID ASSING expressaoFor { if(DEBUG)printf("<expressaoFor> <== ID AS
                                      } 
 ; 
 
-expressaoSimplificada: expressaoOperacao operacaoComparacao expressaoOperacao { if(DEBUG)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
-                                                                                $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
-                                                                              }
-                     | expressaoOperacao                                      { if(DEBUG)printf("<expressaoSimplificada> <== <expressaoOperacao>\n");
-                                                                                $$ = $1; 
-                                                                              }
-;
 
-expressaoOperacao: expressaoOperacao operacaoNumerica termo { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
-                                                              $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);
-                                                            }
-                 | expressaoOperacao operacaoLogic termo    { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
-                                                              $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
-                                                            }
-                 | termo                                    { if(DEBUG)printf("<operacaoNumerica> <== <termo>\n");
-                                                              $$ = $1;
-                                                            }
+expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
+                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);
+                                                                        }
+                      | expressaoSimplificada operacaoLogic termo       { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
+                                                                         $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
+                                                                        }  
+                      | expressaoSimplificada operacaoComparacao termo  { if(DEBUG)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
+                                                                         $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
+                                                                        }
+                      | termo                                           { if(DEBUG)printf("<operacaoNumerica> <== <termo>\n");
+                                                                          $$ = $1;
+                                                                        }
 ;
 
 operacaoNumerica: ADD  { if(DEBUG)printf("<operacaoNumerica> <== ADD\n");
@@ -374,25 +369,26 @@ struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *sec
 
 void show_tree( int positionTree, struct nodeTree *tree) {
   if (tree) {
-    for(int j=0;j<positionTree;j++){
+    int i=0;
+    while(i < positionTree){
       printf("__");
+      i++;
     }
-    printf("| nameNode: %s  |", tree->nameNode);
+    printf("// nameNode: %s  -->  ", tree->nameNode);
     if(tree->firstSymbol != NULL) {
-      printf("firstSymbol: %s ", tree->firstSymbol);
+      printf("firstSymbol: '%s' / ", tree->firstSymbol);
     }
     if(tree->secondSymbol != NULL) {
-      printf("secondSymbol: %s |", tree->secondSymbol);
+      printf("secondSymbol: '%s' / ", tree->secondSymbol);
     }
     if(tree->thirdSymbol != NULL) {
-      printf("thirdSymbol: %s |", tree->thirdSymbol);
+      printf("thirdSymbol: '%s' ", tree->thirdSymbol);
     }
     printf("\n");
     show_tree(positionTree+1, tree->firstNode );
     show_tree(positionTree+1, tree->secondNode );
     show_tree(positionTree+1, tree->thirdNode );
     show_tree(positionTree+1, tree->fourthNode );
-
   }
 }
 
