@@ -449,13 +449,15 @@ void show_symbolTable() {
 void free_symbolTable(){
     struct symbolTable *s, *tmp;
     HASH_ITER(hh, syntaticTable, s, tmp) {
-        HASH_DEL(syntaticTable, s);
-        free(s);
+      HASH_DEL(syntaticTable, s);
+      free(s);
     }
 }
 
 void yyerror(const char *string_node) {
-    printf("<ERRO> linha = %d, coluna = %d, yyerror = %s\n", currentLine, positionWord, string_node);
+    printf("\n##### Ocorreu erro SINTATICO ######\n");
+    printf("\n\t[ERRO SINTATICO] linha = %d, coluna = %d, yyerror = %s\n\n", currentLine, positionWord, string_node);
+    printf("##### Fim Erro     #####\n\n");
 }
 
 // Got from documentation flex https://westes.github.io/flex/manual/Simple-Examples.html#Simple-Examples
@@ -474,10 +476,9 @@ int main( int argc, char **argv ){
     free_symbolTable(syntaticTree); 
   }
   else{
-    printf("\n\nDEU ERRO\n");
+    printf("\n\nERROS APARECERAM! NAO SERA MOSTRADO A ARVORE SINTATICA NEM A TABELA DE SIMBOLOS\n");
   }
   fclose(yyin);
   yylex_destroy();
   return 0;
 }
-

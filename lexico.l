@@ -362,8 +362,8 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 
 . {
-    printf("\n##### Ocorreu erro ######\n");
-    printf("Line %d | Position %d | ERROR = '%s' \n",  currentLine, positionWord, yytext);
+    printf("\n##### Ocorreu erro LEXICO ######\n");
+    printf("[ERRO LEXICO] Line %d | Position %d | ERROR = '%s' \n",  currentLine, positionWord, yytext);
     printf("##### Fim Erro     #####\n\n");
 }
 
