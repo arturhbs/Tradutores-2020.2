@@ -39,7 +39,8 @@ COMMENT "//"
 UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
-STRING \"[^\"]*\"|'[^']*'
+STRING \"[^\"][^\"]+\"
+CHAR '[^']'
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
@@ -52,7 +53,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     yylval.string_node = (char *) strdup(yytext);
     return INT;
 }
-
 
 {FLOAT} {
     positionWord += strlen(yytext);
@@ -127,14 +127,12 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     }
 }
 
-
 {EMPTY_LABEL} {
     positionWord += strlen(yytext);
     //printf("Line %d | Position %d | EMPTY = '%s'\n", currentLine, positionWord, yytext);
     yylval.string_node = (char *) strdup(yytext);
     return EMPTY_LABEL;
 }
-
 
 {OUTINPUT} { 
     positionWord += strlen(yytext);
@@ -156,7 +154,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
         }
     }
 }
-
 
 {IF} {
     positionWord += strlen(yytext);
@@ -193,6 +190,12 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     return STRING;
 }
 
+{CHAR} {
+    positionWord += strlen(yytext);
+    //printf("Line %d | Position %d | CHAR = '%s' \n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
+    return CHAR;
+}
 
 {ADD_SUB} {
     positionWord += strlen(yytext);
@@ -208,7 +211,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
         }
     }
 }
-
 
 {MULT_DIV} {
     positionWord += strlen(yytext);
@@ -292,8 +294,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     }
 }
 
-
-
 {COMMENT}.* {
     //printf("Line %d | Position %d | CLOSE_CURLY = '%s'\n", currentLine, positionWord, yytext);
 }
@@ -308,38 +308,47 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 }
 
 " "* {
+    positionWord += strlen(yytext);
     //printf("<ESPACE>\n");
 }
 
 ";" {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 "," {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 "(" {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 ")" {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 "{" {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 "}" {
+    positionWord += strlen(yytext);
     return yytext[0];
 }
 
 ":" {
+    positionWord += strlen(yytext);
     //return yytext[0];
 }
 
 "." {
+    positionWord += strlen(yytext);
     //return yytext[0];
 }
 

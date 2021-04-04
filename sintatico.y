@@ -4,28 +4,42 @@
 
 %{
 #include <stdio.h>
+#include <stdlib.h>
 #include "ut_hash.h"
 int yylex();
 extern void yyerror(const char *string_node);
 extern int yylex_destroy();
 extern FILE *yyin;
-int DEBUG = 0; 
+extern int currentLine;
+extern int positionWord;
+int DEPURADOR = 1; 
+int deuErro = 0; 
 
 // Arvore sintatica
 struct nodeTree {
-  struct nodeTree *firstNode;
-  struct nodeTree *secondNode;
-  struct nodeTree *thirdNode;
-  struct nodeTree *fourthNode;
-  char *nameNode;
-  char *firstSymbol;
-  char *secondSymbol;
-  char *thirdSymbol;
+  struct nodeTree *firstNode; // primeiro no da arvore
+  struct nodeTree *secondNode;// segundo no da arvore
+  struct nodeTree *thirdNode; // terceiro no da arvore
+  struct nodeTree *fourthNode;// quarto no da arvore
+  char *nameNode;             // no vinculado na arvore
+  char *firstSymbol;          // primeiro token da arvore
+  char *secondSymbol;         // segundo token no da arvore
+  char *thirdSymbol;          // terceiro token da arvore
 };
 
-struct nodeTree* syntaticTree = NULL;
-struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
+// Arvore sintatica
+struct symbolTable {
+  char *nameObj;    // nome do objeto que esta no codigo 
+  char *typeObj;    // int;float;set;elem
+  char *localObj;   // variavel;funcao
+  UT_hash_handle hh; // auxiliar para hash
+};
 
+
+struct nodeTree* syntaticTree = NULL;
+struct symbolTable* syntaticTable = NULL;
+struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
+void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
 %}
 
 %union {
@@ -40,7 +54,7 @@ struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *sec
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
-%token <string_node> ID INT FLOAT STRING EMPTY_LABEL QUOTES ASSING
+%token <string_node> ID INT FLOAT STRING EMPTY_LABEL  ASSING CHAR
 %token <string_node> IF ELSE FOR RETURN 
 %token <string_node> COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
 %token <string_node> OR AND NEGATIVE MULT DIV ADD SUB
@@ -50,302 +64,316 @@ struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *sec
 %right THEN ELSE
 %%
 
-tradutor: declaracoesExtenas  {if(DEBUG)printf("<tradutor> <== <declaracoesExternas>\n");
+tradutor: declaracoesExtenas  {if(DEPURADOR)printf("<tradutor> <== <declaracoesExternas>\n");
             syntaticTree = $1;
           }
 ;
 
-declaracoesExtenas: funcoes                                 {if(DEBUG)printf("<declaracoesExternas> <==  <funcoes>\n");
+declaracoesExtenas: funcoes                                 {if(DEPURADOR)printf("<declaracoesExternas> <==  <funcoes>\n");
                                                               $$ = $1;
                                                             }
-                  | declaracoesVariaveis                    {if(DEBUG)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
+                  | declaracoesVariaveis                    {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
                                                               $$ = $1;
                                                             }
-                  | declaracoesExtenas funcoes              {if(DEBUG)printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
+                  | declaracoesExtenas funcoes              {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                                                             }
-                  | declaracoesExtenas declaracoesVariaveis {if(DEBUG)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
+                  | declaracoesExtenas declaracoesVariaveis {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
+                                                            }
+                  | error                                   {deuErro =1;
                                                             }
 ;
 
-declaracoesVariaveis: tipagem ID ';' {if(DEBUG)printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");
+declaracoesVariaveis: tipagem ID ';' {if(DEPURADOR)printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");
                                         $$ = addition_node($1, NULL, NULL, NULL, "declaracoesVariaveis", $2, NULL, NULL);
+                                        addition_symbolTable($2, $1->firstSymbol,  "Variavel");
                                      }
  
 ;
 
-funcoes: tipagem ID '(' parametros ')' posDeclaracao {if(DEBUG)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
-                                                       $$ = addition_node($1, $4, $6, NULL, "funcoes", $2, NULL, NULL);            
+funcoes: tipagem ID '(' parametros ')' posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
+                                                       $$ = addition_node($1, $4, $6, NULL, "funcoes", $2, NULL, NULL);  
+                                                       addition_symbolTable( $2, $1->firstSymbol, "Funcao");          
                                                      }
 ;
 
-parametros: parametros ',' tipagem ID {if(DEBUG)printf("<parametros> <== <parametros> , <tipagem> ID\n");
-                                        $$ = addition_node($1, $3, NULL, NULL, "parametros", $4, NULL, NULL);            
+parametros: parametros ',' tipagem ID { if(DEPURADOR)printf("<parametros> <== <parametros> , <tipagem> ID\n");
+                                        $$ = addition_node($1, $3, NULL, NULL, "parametros", $4, NULL, NULL);
+                                        addition_symbolTable($4, $3->firstSymbol,  "Variavel");            
                                       }
-          | tipagem ID                {if(DEBUG)printf("<parametros> <== <tipagem> ID\n");
+          | tipagem ID                { if(DEPURADOR)printf("<parametros> <== <tipagem> ID\n");
                                         $$ = addition_node($1,NULL ,NULL ,NULL , "parametros", $2, NULL, NULL);            
+                                        addition_symbolTable($2, $1->firstSymbol,  "Variavel");            
                                       }
-          | %empty                    {if(DEBUG)printf("<parametros> <== E\n");
+          | %empty                    { if(DEPURADOR)printf("<parametros> <== E\n");
                                         $$ = NULL ;          
                                       }
 ;
 
-posDeclaracao:  '{' sentencaLista '}' {if(DEBUG)printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");
+posDeclaracao:  '{' sentencaLista '}' {if(DEPURADOR)printf("<posDeclaracao> <==  OPEN_CURLY <declaracoesVariaveisLocais> <sentencaLista> CLOSE_CURLY\n");
                                         $$ = $2;    
                                       }
 ; 
 
-tipagem: TYPE_INT   { if(DEBUG)printf("<tipagem> <== TYPE_INT\n");
+tipagem: TYPE_INT   { if(DEPURADOR)printf("<tipagem> <== TYPE_INT\n");
                       $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
                     }
-       | TYPE_FLOAT { if(DEBUG)printf("<tipagem> <== TYPE_FLOAT\n");
+       | TYPE_FLOAT { if(DEPURADOR)printf("<tipagem> <== TYPE_FLOAT\n");
                       $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
                     }
-       | TYPE_ELEM  { if(DEBUG)printf("<tipagem> <== TYPE_ELEM\n");
+       | TYPE_ELEM  { if(DEPURADOR)printf("<tipagem> <== TYPE_ELEM\n");
                       $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
                     }
-       | TYPE_SET   { if(DEBUG)printf("<tipagem> <== TYPE_SET\n");
+       | TYPE_SET   { if(DEPURADOR)printf("<tipagem> <== TYPE_SET\n");
                       $$ = addition_node(NULL, NULL, NULL, NULL, "tipagem", $1, NULL, NULL);
                     }
 ;          
 
-sentencaLista: sentencaLista sentenca { if(DEBUG)printf("<sentencaLista> <== <sentencaLista> <sentenca>\n");
+sentencaLista: sentencaLista sentenca { if(DEPURADOR)printf("<sentencaLista> <== <sentencaLista> <sentenca>\n");
                                         $$ = addition_node($1, $2, NULL, NULL, "sentecaLista", NULL, NULL, NULL);
                                       }
-              | %empty                { if(DEBUG)printf("<sentencaLista> <== E\n");
+              | %empty                { if(DEPURADOR)printf("<sentencaLista> <== E\n");
                                         $$ = NULL;
                                       }
 ;
 
-sentenca: condicionalSentenca    { if(DEBUG)printf("<sentenca> <== <condicionalSentenca>\n");
+sentenca: condicionalSentenca    { if(DEPURADOR)printf("<sentenca> <== <condicionalSentenca>\n");
                                    $$ = $1;
                                  }
-        | iteracaoSentenca       { if(DEBUG)printf("<sentenca> <== <iteracaoSentenca>\n");
+        | iteracaoSentenca       { if(DEPURADOR)printf("<sentenca> <== <iteracaoSentenca>\n");
                                    $$ = $1;
                                  }
-        | returnSentenca         { if(DEBUG)printf("<sentenca> <== <returnSentenca>\n");
+        | returnSentenca         { if(DEPURADOR)printf("<sentenca> <== <returnSentenca>\n");
                                    $$ = $1;
                                  }
-        | leituraEscritaSentenca { if(DEBUG)printf("<sentenca> <== <leituraEscritaSentenca>\n");
+        | leituraEscritaSentenca { if(DEPURADOR)printf("<sentenca> <== <leituraEscritaSentenca>\n");
                                    $$ = $1;
                                  }
-        | expressao              { if(DEBUG)printf("<sentenca> <== <expressao>\n");
+        | expressao              { if(DEPURADOR)printf("<sentenca> <== <expressao>\n");
                                    $$ = $1;
                                  }    
-        | declaracoesVariaveis   { if(DEBUG)printf("<sentenca> <== <declaracoesVariaveis>\n");
+        | declaracoesVariaveis   { if(DEPURADOR)printf("<sentenca> <== <declaracoesVariaveis>\n");
                                    $$ = $1;
                                  }
-        | conjuntoForall         { if(DEBUG)printf("<sentenca> <== <conjuntoForall>\n");
+        | conjuntoForall         { if(DEPURADOR)printf("<sentenca> <== <conjuntoForall>\n");
                                    $$ = $1;
                                  }  
-        
+        | error                   {deuErro =1;
+                                  }
 ;
 
-conjuntoForall:  SET_FORALL'('conjuntoIN ')' posIFForallExists  { if(DEBUG)printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");
+conjuntoForall:  SET_FORALL'('conjuntoIN ')' posIFForallExists  { if(DEPURADOR)printf("<conjuntoSentenca> <== SET_FORALL'('conjuntoExpressaoForallExists ')' sentenca ';'\n");
                                                                   $$ = addition_node($3, $5, NULL, NULL, "conjuntoForall", $1, NULL, NULL);
                                                                 }
 ;
 
-condicionalSentenca: IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEBUG)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
+condicionalSentenca: IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
                                                                                       $$ = addition_node($3, $5, NULL, NULL, "condicionalSentenca", $1, NULL, NULL);                                                                        
                                                                                     }
-                   | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {if(DEBUG)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");
+                   | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");
                                                                                       $$ = addition_node($3, $5, $7, NULL, "condicionalSentenca", $1, $6 , NULL);                                                                        
                                                                                     }
 ;
 
-condicaoIF: expressaoSimplificada           { if(DEBUG)printf("<condicaoIF> <== expressaoSimplificada\n");
+condicaoIF: expressaoSimplificada           { if(DEPURADOR)printf("<condicaoIF> <== expressaoSimplificada\n");
                                               $$ = $1;                                                                                                  
                                             }
-          | conjuntoIN                      { if(DEBUG)printf("<condicaoIF> <== conjuntoIN\n");
+          | conjuntoIN                      { if(DEPURADOR)printf("<condicaoIF> <== conjuntoIN\n");
                                               $$ = $1;                                                                                                                    
                                             }
-          | NEGATIVE expressaoSimplificada  { if(DEBUG)printf("<condicaoIF> <== NEGATIVE expressaoSimplificada\n");
+          | NEGATIVE expressaoSimplificada  { if(DEPURADOR)printf("<condicaoIF> <== NEGATIVE expressaoSimplificada\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                    
                                             }
-          | NEGATIVE conjuntoIN             { if(DEBUG)printf("<condicaoIF> <== NEGATIVE conjuntoIN\n");
+          | NEGATIVE conjuntoIN             { if(DEPURADOR)printf("<condicaoIF> <== NEGATIVE conjuntoIN\n");
                                               $$ = addition_node($2, NULL, NULL, NULL, "condicaoIF", $1, NULL, NULL);                                                                                                                                                                
                                             }
-          | '(' conjuntoIN ')'              { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+          | '(' conjuntoIN ')'              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                               $$ = $2;
                                             }
 ;
 
-posIFForallExists: posDeclaracao  { if(DEBUG)printf("<posIFForallExists> <== posDeclaracao\n");
+posIFForallExists: posDeclaracao  { if(DEPURADOR)printf("<posIFForallExists> <== posDeclaracao\n");
                                     $$ = $1;                                                                                                                                                                                                 
                                   }
-                  | sentenca      { if(DEBUG)printf("<posIFForallExists> <== sentenca\n");
+                  | sentenca      { if(DEPURADOR)printf("<posIFForallExists> <== sentenca\n");
                                     $$ = $1;                                                                                                                                                                                    
                                   }
 ;
 
-iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao { if(DEBUG)printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");
+iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao { if(DEPURADOR)printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");
                                                                                                  $$ = addition_node($3, $4, $6 , $8, "iteracaoSentenca", $1, NULL, NULL);                                                                                                                                                                                                                                                                                   
                                                                                                }
 ;
 
-returnSentenca: RETURN expressaoSimplificada ';' { if(DEBUG)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
+returnSentenca: RETURN expressaoSimplificada ';' { if(DEPURADOR)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
                                                    $$ = addition_node($2 ,NULL ,NULL ,NULL, "returnSentenca",$1 ,NULL ,NULL);                                                                                                                                                                                                                                                                                   
                                                  }
 ;
 
-leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   { if(DEBUG)printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");
+leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");
                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                        
                                                      }
-                      | OUT_WRITELN '('STRING')' ';' { if(DEBUG)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");
+                      | OUT_WRITELN '('STRING')' ';' { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");
                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
                                                      }
-                      | IN_READ '('ID')' ';'         { if(DEBUG)printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");
+                      | OUT_WRITE '('CHAR')' ';'   { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITE '('CHAR')' ';' \n");
+                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                        
+                                                      }
+                      | OUT_WRITELN '('CHAR')' ';' { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('CHAR')' ';'\n");
+                                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
+                                                     }
+                      | IN_READ '('ID')' ';'         { if(DEPURADOR)printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");
                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
                                                      }                      
 ;
 
-argumentos: argumentosLista { if(DEBUG)printf("<argumentos> <== <argumentosLista>\n");
+argumentos: argumentosLista { if(DEPURADOR)printf("<argumentos> <== <argumentosLista>\n");
                               $$ = $1;          
                             }
-          | %empty          { if(DEBUG)printf("<argumentos> <== E\n");
+          | %empty          { if(DEPURADOR)printf("<argumentos> <== E\n");
                               $$ = NULL;
                             }
 ;
 
-argumentosLista: expressaoSimplificada                      { if(DEBUG)printf("<argumentosLista> <== <expressaoSimplificada>\n");
+argumentosLista: expressaoSimplificada                      { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada>\n");
                                                               $$ = $1;                                                                     
                                                             }
-               |  argumentosLista ',' expressaoSimplificada { if(DEBUG)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
+               |  argumentosLista ',' expressaoSimplificada { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
                                                               $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                      
                                                             }
      
 ;
 
-conjuntoSentenca: SET_ADD '(' conjuntoIN ')'    { if(DEBUG)printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoIN ')' ';'\n");
+conjuntoSentenca: SET_ADD '(' conjuntoIN ')'    { if(DEPURADOR)printf("<conjuntoSentenca> <== SET_ADD '(' conjuntoIN ')' ';'\n");
                                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "conjuntoSentenca", $1 , NULL ,NULL); 
                                                      }
-                | SET_REMOVE '(' conjuntoIN')'  { if(DEBUG)printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoIN')' ';' \n");
+                | SET_REMOVE '(' conjuntoIN')'  { if(DEPURADOR)printf("<conjuntoSentenca> <== SET_REMOVE '(' conjuntoIN')' ';' \n");
                                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "conjuntoSentenca", $1 , NULL ,NULL);
                                                      }
-                | SET_IS_SET '(' ID ')'              { if(DEBUG)printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");
+                | SET_IS_SET '(' ID ')'              { if(DEPURADOR)printf("<conjuntoSentenca> <== SET_IS_SET '(' ID ')' ';'\n");
                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "conjuntoSentenca", $1 , $3 ,NULL);
                                                      }      
-                | SET_EXISTS '('conjuntoIN ')'  { if(DEBUG)printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");
+                | SET_EXISTS '('conjuntoIN ')'  { if(DEPURADOR)printf("<conjuntoSentenca> <== SET_EXISTS '('conjuntoExpressaoForallExists ')' sentenca ';'\n");
                                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "conjuntoSentenca", $1 , NULL ,NULL);
                                                      }
 ;
 
-conjuntoIN: expressaoSimplificada SET_IN conjuntoSentenca    { if(DEBUG)printf("<conjuntoIN> <== expressao SET_IN conjuntoSentenca\n");
+conjuntoIN: expressaoSimplificada SET_IN conjuntoSentenca    { if(DEPURADOR)printf("<conjuntoIN> <== expressao SET_IN conjuntoSentenca\n");
                                                                     $$ = addition_node($1 ,$3 ,NULL ,NULL, "conjuntoIN", $2 , NULL ,NULL);
                                                                   }
-          | expressaoSimplificada SET_IN ID                  { if(DEBUG)printf("<conjuntoIN> <== expressaoSimplificada SET_IN ID\n");
+          | expressaoSimplificada SET_IN ID                  { if(DEPURADOR)printf("<conjuntoIN> <== expressaoSimplificada SET_IN ID\n");
                                                                     $$ = addition_node($1 ,NULL ,NULL ,NULL, "conjuntoIN", $2 ,$3 ,NULL);
                                                                   }       
 ;                    
 
-expressao: ID ASSING expressao        { if(DEBUG)printf("<expressao> <== ID ASSING expressao\n");
+expressao: ID ASSING expressao        { if(DEPURADOR)printf("<expressao> <== ID ASSING expressao\n");
                                         $$ = addition_node($3 ,NULL ,NULL ,NULL, "expressao", $1 , $2 ,NULL); 
                                       }                                       
-         | expressaoSimplificada ';'  { if(DEBUG)printf("<expressao> <== expressaoSimplificada\n");
+         | expressaoSimplificada ';'  { if(DEPURADOR)printf("<expressao> <== expressaoSimplificada\n");
                                         $$ = $1; 
                                       }
 ;    
 
-expressaoFor: ID ASSING expressaoFor { if(DEBUG)printf("<expressaoFor> <== ID ASSING expressaoFor\n");
+expressaoFor: ID ASSING expressaoFor { if(DEPURADOR)printf("<expressaoFor> <== ID ASSING expressaoFor\n");
                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "expressaoFor", $1, $2 ,NULL);  
                                      }
-             |expressaoSimplificada  { if(DEBUG)printf("<expressaoFor> <== expressaoSimplificada\n");
+             |expressaoSimplificada  { if(DEPURADOR)printf("<expressaoFor> <== expressaoSimplificada\n");
                                        $$ = $1; 
                                      } 
 ; 
 
-
-expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
+expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEPURADOR)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
                                                                           $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);
                                                                         }
-                      | expressaoSimplificada operacaoLogic termo       { if(DEBUG)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
+                      | expressaoSimplificada operacaoLogic termo       { if(DEPURADOR)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
                                                                         }  
-                      | expressaoSimplificada operacaoComparacao termo  { if(DEBUG)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
+                      | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
                                                                         }
-                      | termo                                           { if(DEBUG)printf("<operacaoNumerica> <== <termo>\n");
+                      | termo                                           { if(DEPURADOR)printf("<operacaoNumerica> <== <termo>\n");
                                                                           $$ = $1;
                                                                         }
 ;
 
-operacaoNumerica: ADD  { if(DEBUG)printf("<operacaoNumerica> <== ADD\n");
+operacaoNumerica: ADD  { if(DEPURADOR)printf("<operacaoNumerica> <== ADD\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
-                | SUB  { if(DEBUG)printf("<operacaoNumerica> <== SUB\n");
+                | SUB  { if(DEPURADOR)printf("<operacaoNumerica> <== SUB\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
-                | MULT { if(DEBUG)printf("<operacaoNumerica> <== MULT\n");
+                | MULT { if(DEPURADOR)printf("<operacaoNumerica> <== MULT\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
-                | DIV  { if(DEBUG)printf("<operacaoNumerica> <== DIV\n");
+                | DIV  { if(DEPURADOR)printf("<operacaoNumerica> <== DIV\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
 ;    
 
-operacaoLogic: OR        { if(DEBUG)printf("<operacaoLogic> <== OR\n");
+operacaoLogic: OR        { if(DEPURADOR)printf("<operacaoLogic> <== OR\n");
                            $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoLogic", $1, NULL ,NULL);
                          }
-             | AND       { if(DEBUG)printf("<operacaoLogic> <== AND\n");
+             | AND       { if(DEPURADOR)printf("<operacaoLogic> <== AND\n");
                            $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoLogic", $1, NULL ,NULL);
                          }
-             | NEGATIVE  { if(DEBUG)printf("<operacaoLogic> <== NEGATIVE\n");
+             | NEGATIVE  { if(DEPURADOR)printf("<operacaoLogic> <== NEGATIVE\n");
                            $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoLogic", $1, NULL ,NULL); 
                          }
 ;
 
-termo: '(' expressaoSimplificada ')' { if(DEBUG)printf("<termo> <== '(' <expressaoSimplificada> ')'\n");
+termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <expressaoSimplificada> ')'\n");
                                        $$ = $2;
                                      }
-     | ID                            { if(DEBUG)printf("<termo> <== ID\n");
+     | ID                            { if(DEPURADOR)printf("<termo> <== ID\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);  
                                      }
-     | INT                           { if(DEBUG)printf("<termo> <== INT\n");
+     | INT                           { if(DEPURADOR)printf("<termo> <== INT\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-     | FLOAT                         { if(DEBUG)printf("<termo> <== FLOAT\n");
+     | FLOAT                         { if(DEPURADOR)printf("<termo> <== FLOAT\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-     | EMPTY_LABEL                   { if(DEBUG)printf("<termo> <== EMPTY_LABEL\n");
+     | EMPTY_LABEL                   { if(DEPURADOR)printf("<termo> <== EMPTY_LABEL\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-     | QUOTES STRING QUOTES          { if(DEBUG)printf("<termo> <== QUOTES STRING QUOTES\n");
-                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, $2 ,$3);
+     | STRING                       { if(DEPURADOR)printf("<termo> <== QUOTES STRING QUOTES\n");
+                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-      | ID '(' argumentos')'         { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+     | CHAR                          { if(DEPURADOR)printf("<termo> <== QUOTES CHAR QUOTES\n");
+                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                     }
+     | ID '(' argumentos')'          { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-      | conjuntoSentenca             { if(DEBUG)printf("<termo> <== ID '(' argumentos')' \n");
+     | conjuntoSentenca              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = $1;
                                      }     
 
 ;
 
-operacaoComparacao: COMPARABLES_EQUAL { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_EQUAL\n");
+operacaoComparacao: COMPARABLES_EQUAL { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_EQUAL\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
-                  | COMPARABLES_DIFF  { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_DIFF\n");
+                  | COMPARABLES_DIFF  { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_DIFF\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
-                  | COMPARABLES_LTE   { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
+                  | COMPARABLES_LTE   { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
-                  | COMPARABLES_GTE   { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
+                  | COMPARABLES_GTE   { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
-                  | COMPARABLES_LT    { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
+                  | COMPARABLES_LT    { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
-                  | COMPARABLES_GT    { if(DEBUG)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
+                  | COMPARABLES_GT    { if(DEPURADOR)printf("<operacaoComparacao> <== COMPARABLES_GT\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoComparacao", $1, NULL ,NULL);
                                       }
 ;                        
 
 
 %%      
-
 
 struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol ){
   struct nodeTree* node = (struct nodeTree*)malloc(sizeof(struct nodeTree));
@@ -360,7 +388,6 @@ struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *sec
 
   return node;
 }
-
 
 void show_tree( int positionTree, struct nodeTree *nodeTree) {
   if (nodeTree) {
@@ -400,8 +427,35 @@ void free_tree(struct nodeTree *nodeTree){
 }
 
 
+void addition_symbolTable(char *nameObj,char *typeObj,char *localObj){
+  struct symbolTable *obj = (struct symbolTable*)malloc(sizeof (struct symbolTable));
+  obj->nameObj = nameObj;
+  obj->typeObj = typeObj;
+  obj->localObj = localObj;
+
+  HASH_ADD_STR(syntaticTable, nameObj, obj);
+  
+}
+
+void show_symbolTable() {
+  struct symbolTable *obj;
+
+  for(obj=syntaticTable; obj != NULL; obj=obj->hh.next) {
+    printf("nameObj: %20s | typeObj: %10s | localObj: %10s\n", obj->nameObj, obj->typeObj, obj->localObj);
+  }
+
+}
+
+void free_symbolTable(){
+    struct symbolTable *s, *tmp;
+    HASH_ITER(hh, syntaticTable, s, tmp) {
+        HASH_DEL(syntaticTable, s);
+        free(s);
+    }
+}
+
 void yyerror(const char *string_node) {
-    printf("yyerror= %s\n", string_node);
+    printf("<ERRO> linha = %d, coluna = %d, yyerror = %s\n", currentLine, positionWord, string_node);
 }
 
 // Got from documentation flex https://westes.github.io/flex/manual/Simple-Examples.html#Simple-Examples
@@ -411,10 +465,16 @@ int main( int argc, char **argv ){
   if ( argc > 0 )yyin = fopen( argv[0], "r" );else yyin = stdin; 
 
   yyparse();
-  if(DEBUG == 0){
+  if(deuErro == 0){
     printf("\n\n ####  Arvore Sintatica  #### \n\n");
     show_tree(begginTree, syntaticTree);
+    printf("\n\n ####  Tabela Sintatica  #### \n\n");
+    show_symbolTable();
     free_tree(syntaticTree); 
+    free_symbolTable(syntaticTree); 
+  }
+  else{
+    printf("\n\nDEU ERRO\n");
   }
   fclose(yyin);
   yylex_destroy();
