@@ -6,14 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ut_hash.h"
+#include "ut_list.h"
+
 int yylex();
 extern void yyerror(const char *string_node);
 extern int yylex_destroy();
 extern FILE *yyin;
 extern int currentLine;
 extern int positionWord;
-int DEPURADOR = 1; 
+int DEPURADOR = 0; 
 int deuErro = 0; 
+char * scope_now = "GLOBAL"; // setar de inicio escopo como global
 
 // Arvore sintatica
 struct nodeTree {
@@ -29,17 +32,27 @@ struct nodeTree {
 
 // Arvore sintatica
 struct symbolTable {
-  char *nameObj;    // nome do objeto que esta no codigo 
-  char *typeObj;    // int;float;set;elem
-  char *localObj;   // variavel;funcao
+  char *nameObj;     // nome do objeto que esta no codigo 
+  char *typeObj;     // int;float;set;elem
+  char *localObj;    // variavel;funcao
+  char *scope;       // escopo em que esta inserido
   UT_hash_handle hh; // auxiliar para hash
 };
 
+// Declaracoes escopo
+struct element{
+  char *type;
+  char *name;
+  struct element *next;
+};
 
 struct nodeTree* syntaticTree = NULL;
 struct symbolTable* syntaticTable = NULL;
+struct element* elementParam = NULL;
 struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
 void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
+void print_element();
+void addition_param(char *typeParam, char *nameParam);
 %}
 
 %union {
@@ -94,17 +107,22 @@ declaracoesVariaveis: tipagem ID ';' {if(DEPURADOR)printf("<declaracoesVariaveis
 
 funcoes: tipagem ID '(' parametros ')' posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
                                                        $$ = addition_node($1, $4, $6, NULL, "funcoes", $2, NULL, NULL);  
-                                                       addition_symbolTable( $2, $1->firstSymbol, "Funcao");          
-                                                     }
+                                                       addition_symbolTable( $2, $1->firstSymbol, "Funcao");
+                                                       print_element();                 
+                                                      }
 ;
+
+
 
 parametros: parametros ',' tipagem ID { if(DEPURADOR)printf("<parametros> <== <parametros> , <tipagem> ID\n");
                                         $$ = addition_node($1, $3, NULL, NULL, "parametros", $4, NULL, NULL);
-                                        addition_symbolTable($4, $3->firstSymbol,  "Variavel");            
+                                        addition_symbolTable($4, $3->firstSymbol,  "Parametro");
+                                        addition_param($3->firstSymbol, $4);              
                                       }
           | tipagem ID                { if(DEPURADOR)printf("<parametros> <== <tipagem> ID\n");
                                         $$ = addition_node($1,NULL ,NULL ,NULL , "parametros", $2, NULL, NULL);            
-                                        addition_symbolTable($2, $1->firstSymbol,  "Variavel");            
+                                        addition_symbolTable($2, $1->firstSymbol,  "Parametro");
+                                        addition_param($1->firstSymbol, $2);            
                                       }
           | %empty                    { if(DEPURADOR)printf("<parametros> <== E\n");
                                         $$ = NULL ;          
@@ -375,6 +393,21 @@ operacaoComparacao: COMPARABLES_EQUAL { if(DEPURADOR)printf("<operacaoComparacao
 
 %%      
 
+void addition_param(char *typeParam, char *nameParam){
+  struct element* parameter = (struct element*)malloc(sizeof(struct element));
+  parameter->type = typeParam;
+  parameter->name = nameParam;
+  LL_APPEND(elementParam, parameter);
+}
+
+void print_element(){	
+  struct element *elt =  (struct element*)malloc(sizeof(struct element));
+  LL_FOREACH(elementParam,elt) {
+    printf("type %s\n",elt->type);
+    printf("type %s\n",elt->name);
+  }
+}
+
 struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol ){
   struct nodeTree* node = (struct nodeTree*)malloc(sizeof(struct nodeTree));
   node->firstNode = firstNode;
@@ -433,6 +466,12 @@ void addition_symbolTable(char *nameObj,char *typeObj,char *localObj){
   obj->typeObj = typeObj;
   obj->localObj = localObj;
 
+  char *concatStringScope = malloc(strlen(nameObj) + strlen(localObj) + 1);
+  strcpy(concatStringScope, nameObj);
+  strcat(concatStringScope, localObj);
+  // printf("Concat string  = %s", concatStringScope );
+  obj->scope = concatStringScope;
+
   HASH_ADD_STR(syntaticTable, nameObj, obj);
   
 }
@@ -441,7 +480,7 @@ void show_symbolTable() {
   struct symbolTable *obj;
 
   for(obj=syntaticTable; obj != NULL; obj=obj->hh.next) {
-    printf("nameObj: %20s | typeObj: %10s | localObj: %10s\n", obj->nameObj, obj->typeObj, obj->localObj);
+    printf("nameObj: %20s | typeObj: %10s | localObj: %10s | scope: %10s\n", obj->nameObj, obj->typeObj, obj->localObj, obj->scope);
   }
 
 }
