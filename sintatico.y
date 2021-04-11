@@ -14,7 +14,7 @@ extern int yylex_destroy();
 extern FILE *yyin;
 extern int currentLine;
 extern int positionWord;
-int DEPURADOR = 0; 
+int DEPURADOR = 1; 
 int deuErro = 0; 
 char * scope_now = "GLOBAL"; // setar de inicio escopo como global
 
@@ -51,7 +51,7 @@ struct symbolTable* syntaticTable = NULL;
 struct element* elementParam = NULL;
 struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
 void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
-void print_element();
+void print_elements();
 void addition_param(char *typeParam, char *nameParam);
 %}
 
@@ -108,11 +108,9 @@ declaracoesVariaveis: tipagem ID ';' {if(DEPURADOR)printf("<declaracoesVariaveis
 funcoes: tipagem ID '(' parametros ')' posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
                                                        $$ = addition_node($1, $4, $6, NULL, "funcoes", $2, NULL, NULL);  
                                                        addition_symbolTable( $2, $1->firstSymbol, "Funcao");
-                                                       print_element();                 
+                                                       print_elements();                 
                                                       }
 ;
-
-
 
 parametros: parametros ',' tipagem ID { if(DEPURADOR)printf("<parametros> <== <parametros> , <tipagem> ID\n");
                                         $$ = addition_node($1, $3, NULL, NULL, "parametros", $4, NULL, NULL);
@@ -255,10 +253,13 @@ argumentos: argumentosLista { if(DEPURADOR)printf("<argumentos> <== <argumentosL
 ;
 
 argumentosLista: expressaoSimplificada                      { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada>\n");
-                                                              $$ = $1;                                                                     
+                                                              $$ = $1;         
+                                                              printf("\npassouuuu\n");
+                                                              addition_param($1->firstSymbol, "inteiro");                                                                                                
                                                             }
                |  argumentosLista ',' expressaoSimplificada { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
-                                                              $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                      
+                                                              $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);
+                                                              addition_param($3->firstSymbol, "inteiro");            
                                                             }
      
 ;
@@ -301,16 +302,16 @@ expressaoFor: ID ASSING expressaoFor { if(DEPURADOR)printf("<expressaoFor> <== I
                                      } 
 ; 
 
-expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEPURADOR)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
+expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
                                                                           $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);
                                                                         }
-                      | expressaoSimplificada operacaoLogic termo       { if(DEPURADOR)printf("<operacaoNumerica> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
+                      | expressaoSimplificada operacaoLogic termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
                                                                         }  
                       | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
                                                                         }
-                      | termo                                           { if(DEPURADOR)printf("<operacaoNumerica> <== <termo>\n");
+                      | termo                                           { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                                           $$ = $1;
                                                                         }
 ;
@@ -400,7 +401,7 @@ void addition_param(char *typeParam, char *nameParam){
   LL_APPEND(elementParam, parameter);
 }
 
-void print_element(){	
+void print_elements(){	
   struct element *elt =  (struct element*)malloc(sizeof(struct element));
   LL_FOREACH(elementParam,elt) {
     printf("type %s\n",elt->type);
