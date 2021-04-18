@@ -20,8 +20,8 @@ int positionWord = 1;
 %option noyywrap
 %option noinput nounput
 
-INT [-]?{DIGIT}+
-FLOAT [-]?{DIGIT}+"."{DIGIT}*
+INT {DIGIT}+
+FLOAT {DIGIT}+"."{DIGIT}*
 TYPE "int"|"float"|"elem"|"set"
 SET_COMMANDS "add"|"remove"|"forall"|"is_set"|"in"|"exists"
 EMPTY_LABEL "EMPTY"
