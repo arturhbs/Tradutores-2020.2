@@ -55,6 +55,7 @@ void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
 void insert_scope();
 void  show_elements();
 void delete_elements();
+char* concat(const char *s1, const char *s2);
 void addition_param(char *typeParam, char *nameParam);
 void addition_param_call_function(char *nameParam);
 void addition_param_call_into_params(char* nameFunction);
@@ -68,14 +69,14 @@ void addition_param_call_into_params(char* nameFunction);
 %type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
 %type <node>  argumentos argumentosLista conjuntoSentenca conjuntoIN expressao expressaoFor expressaoSimplificada 
-%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao 
+%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
 %token <string_node> ID INT FLOAT STRING EMPTY_LABEL  ASSING CHAR
 %token <string_node> IF ELSE FOR RETURN 
 %token <string_node> COMPARABLES_EQUAL COMPARABLES_DIFF COMPARABLES_LTE COMPARABLES_GTE COMPARABLES_LT COMPARABLES_GT
-%token <string_node> OR AND NEGATIVE MULT DIV ADD SUB
+%token <string_node> OR AND NEGATIVE MULT DIV ADD SUB 
 %token <string_node> OUT_WRITELN OUT_WRITE IN_READ
 %token <string_node> SET_IN SET_ADD SET_REMOVE SET_FORALL SET_IS_SET SET_EXISTS
 
@@ -91,18 +92,13 @@ declaracoesExtenas: funcoes                                 {if(DEPURADOR)printf
                                                               $$ = $1;
                                                             }
                   | declaracoesVariaveis                    {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoesVariaveis>\n");
-                                                              insert_scope("GLOBAL",1);
-                                                              // delete_elements();
                                                               $$ = $1;
                                                             }
                   | declaracoesExtenas funcoes              {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoesExternas> <funcoes>\n");
-                                                              
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
                                                             }
                   | declaracoesExtenas declaracoesVariaveis {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);
-                                                              insert_scope("GLOBAL",1);
-                                                              // delete_elements();
                                                             }
                   | error                                   {deuErro =1;
                                                             }
@@ -116,11 +112,9 @@ declaracoesVariaveis: tipagem ID ';' {if(DEPURADOR)printf("<declaracoesVariaveis
  
 ;
 
-funcoes: tipagem ID '(' parametros ')' posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
+funcoes: tipagem ID '(' parametros ')'  posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
                                                        $$ = addition_node($1, $4, $6, NULL, "funcoes", $2, NULL, NULL);  
                                                        addition_symbolTable( $2, $1->firstSymbol, "Funcao");
-                                                       insert_scope($2,1);     
-                                                      //  delete_elements();            
                                                       }
 ;
 
@@ -239,21 +233,15 @@ returnSentenca: RETURN expressaoSimplificada ';' { if(DEPURADOR)printf("<returnS
                                                  }
 ;
 
-leituraEscritaSentenca: OUT_WRITE '('STRING')' ';'   { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");
-                                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                        
-                                                     }
-                      | OUT_WRITELN '('STRING')' ';' { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");
-                                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
-                                                     }
-                      | OUT_WRITE '('CHAR')' ';'   { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITE '('CHAR')' ';' \n");
-                                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                        
-                                                      }
-                      | OUT_WRITELN '('CHAR')' ';' { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('CHAR')' ';'\n");
-                                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
-                                                     }
-                      | IN_READ '('ID')' ';'         { if(DEPURADOR)printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");
-                                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
-                                                     }                      
+leituraEscritaSentenca: OUT_WRITE '('expressaoSimplificada')' ';'   { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITE '('STRING')' ';' \n");
+                                                                      $$ = addition_node($3 ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , NULL ,NULL);                                                                                                                                                                                                                        
+                                                                    }
+                      | OUT_WRITELN '('expressaoSimplificada')' ';' { if(DEPURADOR)printf("<leituraEscritaSentenca> <== OUT_WRITELN '('STRING')' ';'\n");
+                                                                      $$ = addition_node($3 ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , NULL ,NULL);                                                                                                                                                                                                                                                                                   
+                                                                    }
+                      | IN_READ '('ID')' ';'                        { if(DEPURADOR)printf("<leituraEscritaSentenca> <== IN_READ '('ID')' ';'\n");
+                                                                      $$ = addition_node(NULL ,NULL ,NULL ,NULL, "leituraEscritaSentenca",$1 , $3 ,NULL);                                                                                                                                                                                                                                                                                   
+                                                                    }                      
 ;
 
 argumentos: argumentosLista { if(DEPURADOR)printf("<argumentos> <== <argumentosLista>\n");
@@ -266,12 +254,10 @@ argumentos: argumentosLista { if(DEPURADOR)printf("<argumentos> <== <argumentosL
 
 argumentosLista: expressaoSimplificada                      { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada>\n");
                                                               $$ = $1;         
-                                                              addition_param(NULL,$1->firstSymbol);          
-                                                              // addition_param_call_function($1->firstSymbol);                                                                                                
+                                                              addition_param(NULL,$1->firstSymbol);                                                                                                                                                                    
                                                             }
                |  argumentosLista ',' expressaoSimplificada { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
-                                                              $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);
-                                                              // addition_param_call_function($3->firstSymbol);  
+                                                              $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                                             
                                                               addition_param(NULL,$3->firstSymbol);          
                                                             }
      
@@ -318,6 +304,9 @@ expressaoFor: ID ASSING expressaoFor { if(DEPURADOR)printf("<expressaoFor> <== I
 expressaoSimplificada: expressaoSimplificada operacaoNumerica termo     { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
                                                                           $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);
                                                                         }
+                      | expressaoSimplificada operacaoMultDiv termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
+                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
+                                                                        } 
                       | expressaoSimplificada operacaoLogic termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoOperacao", NULL, NULL ,NULL);  
                                                                         }  
@@ -335,13 +324,16 @@ operacaoNumerica: ADD  { if(DEPURADOR)printf("<operacaoNumerica> <== ADD\n");
                 | SUB  { if(DEPURADOR)printf("<operacaoNumerica> <== SUB\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
-                | MULT { if(DEPURADOR)printf("<operacaoNumerica> <== MULT\n");
-                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
-                       }
-                | DIV  { if(DEPURADOR)printf("<operacaoNumerica> <== DIV\n");
-                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
-                       }
+             
 ;    
+
+operacaoMultDiv: MULT { if(DEPURADOR)printf("<operacaoMultDiv> <== MULT\n");
+                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoMultDiv", $1, NULL ,NULL);
+                       }
+                | DIV  { if(DEPURADOR)printf("<operacaoMultDiv> <== DIV\n");
+                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoMultDiv", $1, NULL ,NULL);
+                       }
+;
 
 operacaoLogic: OR        { if(DEPURADOR)printf("<operacaoLogic> <== OR\n");
                            $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoLogic", $1, NULL ,NULL);
@@ -382,7 +374,7 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                      }
      | INT                           { if(DEPURADOR)printf("<termo> <== INT\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
-                                     }
+                                     }     
      | FLOAT                         { if(DEPURADOR)printf("<termo> <== FLOAT\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
@@ -397,8 +389,7 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                      }
      | ID '(' argumentos')'          { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
-                                       insert_scope($1,0);
-                                      //  addition_param_call_into_params($1);
+                                       //insert_scope($1,"parameter",0);
                                      }
      | conjuntoSentenca              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = $1;
@@ -416,23 +407,11 @@ void addition_param(char *typeParam, char *nameParam){
   DL_APPEND(elementParam, parameter);
 }
 
-void insert_scope(char *idName, int isFunction){	
-  struct element *elt =  (struct element*)malloc(sizeof(struct element));
-
-  if(idName != NULL){
-    printf("ID Name = %s\n", idName);
-  }
-  DL_FOREACH(elementParam,elt) {
-    if(elt->type == NULL){
-      elt->type = idName;
-    }
-    else{
-      if (elt->scopeName == NULL && isFunction == 1){
-        elt->scopeName = idName;
-      }
-    } 
-  }
- 
+char* concat(const char *s1, const char *s2){
+  char *result = malloc(strlen(s1) + strlen(s2) + 1);
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
 }
 
 void show_elements(){
@@ -470,22 +449,22 @@ struct nodeTree * addition_node(struct nodeTree *firstNode, struct nodeTree *sec
 
 void show_tree( int positionTree, struct nodeTree *nodeTree) {
   if (nodeTree) {
-    int i=0;
-    while(i < positionTree){
-      printf("__");
-      i++;
-    }
-    printf("// nameNode: %s  -->  ", nodeTree->nameNode);
     if(nodeTree->firstSymbol != NULL) {
-      printf("firstSymbol: '%s' / ", nodeTree->firstSymbol);
+      int i=0;
+      while(i < positionTree){
+        printf("__");
+        i++;
+      }
+      // printf("// nameNode: %s  -->  ", nodeTree->nameNode);
+      printf(" '%s' / ", nodeTree->firstSymbol);
+      if(nodeTree->secondSymbol != NULL) {
+        printf(" '%s' / ", nodeTree->secondSymbol);
+      }
+      if(nodeTree->thirdSymbol != NULL) {
+        printf(" '%s' ", nodeTree->thirdSymbol);
+      }
+      printf("\n");
     }
-    if(nodeTree->secondSymbol != NULL) {
-      printf("secondSymbol: '%s' / ", nodeTree->secondSymbol);
-    }
-    if(nodeTree->thirdSymbol != NULL) {
-      printf("thirdSymbol: '%s' ", nodeTree->thirdSymbol);
-    }
-    printf("\n");
     show_tree(positionTree+1, nodeTree->firstNode );
     show_tree(positionTree+1, nodeTree->secondNode );
     show_tree(positionTree+1, nodeTree->thirdNode );
@@ -557,7 +536,7 @@ int main( int argc, char **argv ){
     printf("\n\n ####  Tabela Sintatica  #### \n\n");
     show_symbolTable();
     show_elements();
-    
+
     free_tree(syntaticTree); 
     free_symbolTable(syntaticTree); 
 
