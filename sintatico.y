@@ -61,6 +61,7 @@ void delete_elements();
 char* concat(const char *s1, const char *s2);
 void insert_scope(char *typeParam, char *nameParam, char *scope);
 void verify_var_declaration(char *name);
+void insert_function_scope();
 %}
 
 %union {
@@ -380,6 +381,7 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                      }
      | ID                            { if(DEPURADOR)printf("<termo> <== ID\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);  
+                                       verify_var_declaration($1);
                                      }
      | INT                           { if(DEPURADOR)printf("<termo> <== INT\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
@@ -396,13 +398,14 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
      | CHAR                          { if(DEPURADOR)printf("<termo> <== QUOTES CHAR QUOTES\n");
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
-     | ID                            {  scope_current_aux = scope_current;
-                                        scope_current = $1;
+     | ID                            {  //scope_current_aux = scope_current;
+                                        //scope_current = $1;
                                         insert_scope("call", $1, "callFunc");
                                      }
      '(' argumentos')'               { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = addition_node($4 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
-                                       scope_current = scope_current_aux;
+                                       //scope_current = scope_current_aux;
+                                       insert_function_scope($1);
                                      }
      | conjuntoSentenca              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = $1;
@@ -414,11 +417,9 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
 
 void insert_scope(char *typeParam, char *nameParam, char *local){
   struct element* obj = (struct element*)malloc(sizeof(struct element));
-  // char* scopeConcat;
+  
   obj->typeObj = typeParam;
   obj->nameObj = nameParam;
-  // scopeConcat = concat(scope_current, "_");
-  // scopeConcat = concat(scopeConcat, scope);
   obj->scopeName = scope_current;
   obj->localObj = local;
   DL_APPEND(elementParam, obj);
@@ -431,13 +432,21 @@ char* concat(const char *str1, const char *str2){
   return output;
 }
 
+void insert_function_scope(char *nameFunction){
+  struct element *obj =  (struct element*)malloc(sizeof(struct element));
+  DL_FOREACH(elementParam,obj) {
+    if(strcmp(scope_current,obj->scopeName)==0 && strcmp("argumento", obj->localObj)==0 && obj->typeObj == NULL){
+      obj->typeObj = nameFunction;
+    }
+  }
+}
+
 void verify_var_declaration(char *name){
   struct element *obj =  (struct element*)malloc(sizeof(struct element));
   int passou = 0;
-  DL_FOREACH(elementParam,obj) {
-    if(strcmp(name,obj->nameObj)==0 && strcmp(scope_current,obj->scopeName)==0){
+  DL_FOREACH(elementParam,obj) { 
+    if(strcmp(name,obj->nameObj)==0 && strcmp(scope_current,obj->scopeName)==0 ){
       passou = 1;
-      printf("%s , %s\n", name, obj->nameObj);  
     }
   }
   if (passou == 0){
