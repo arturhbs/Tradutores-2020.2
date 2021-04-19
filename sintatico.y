@@ -461,7 +461,7 @@ void verify_var_declaration(char *name){
     }
   }
   if (passou == 0){
-    printf("\n##### Ocorreu erro SINTATICO ######\n");
+    printf("\n##### Ocorreu erro SEMANTICO ######\n");
     printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, variável %s não declarada\n\n", currentLine, positionWord, name);
     printf("##### Fim Erro     #####\n\n");
   }
