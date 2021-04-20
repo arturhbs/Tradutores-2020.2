@@ -72,7 +72,7 @@ void insert_function_scope();
 %type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
 %type <node>  argumentos argumentosLista conjuntoSentenca conjuntoIN expressao expressaoFor expressaoSimplificada expressaoSimplificada2 expressaoSimplificada3
-%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv
+%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
@@ -334,11 +334,21 @@ expressaoSimplificada3: expressaoSimplificada operacaoMultDiv termo     { if(DEP
                       | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);
                                                                         }
-                      | termo                                           { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                      | expressaoSimplificadaMinus                                           { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                                           $$ = $1;
                                                                         }
 ;
 
+expressaoSimplificadaMinus: 
+    SUB termo { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                 $$ = addition_node($2 ,NULL ,NULL ,NULL, "expressaoSimplificada", $1, NULL ,NULL);                                                       
+              }
+  | termo     { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                $$ = $1;
+              }
+;
+
+;
 operacaoNumerica: ADD  { if(DEPURADOR)printf("<operacaoNumerica> <== ADD\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
