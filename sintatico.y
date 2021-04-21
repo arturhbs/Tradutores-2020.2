@@ -61,7 +61,7 @@ void delete_elements();
 char* concat(const char *s1, const char *s2);
 void insert_scope(char *typeParam, char *nameParam, char *scope);
 void verify_var_declaration(char *name);
-void insert_function_scope();
+void verify_insert_function_scope();
 void semantic_verify();
 void verify_main_declarion();
 %}
@@ -322,23 +322,25 @@ expressaoSimplificada:  expressaoSimplificada operacaoLogic termo       { if(DEP
 
 ;
 
-expressaoSimplificada2: expressaoSimplificada operacaoNumerica termo     { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
-                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada2", NULL, NULL ,NULL);
-                                                                        }
-                     | expressaoSimplificada3                           { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
-                                                                          $$ = $1;
-                                                                        }
+expressaoSimplificada2: 
+  expressaoSimplificada operacaoNumerica termo    { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
+                                                    $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada2", NULL, NULL ,NULL);
+                                                  }
+  | expressaoSimplificada3                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                                                   $$ = $1;
+                                                  }
 ;
 
-expressaoSimplificada3: expressaoSimplificada operacaoMultDiv termo     { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
-                                                                          $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);  
-                                                                        }  
-                      | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
-                                                                         $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);
-                                                                        }
-                      | expressaoSimplificadaMinus                      { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
-                                                                          $$ = $1;
-                                                                        }
+expressaoSimplificada3:
+  expressaoSimplificada operacaoMultDiv termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
+                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);  
+                                                    }  
+  | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
+                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);
+                                                    }
+  | expressaoSimplificadaMinus                      { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                                                      $$ = $1;
+                                                    }
 ;
 
 expressaoSimplificadaMinus: 
@@ -426,7 +428,7 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                      }
         '(' argumentos')'               { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                           $$ = addition_node($4 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
-                                          insert_function_scope($1);
+                                          verify_insert_function_scope($1);
                                         }
      | conjuntoSentenca              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
                                        $$ = $1;
@@ -449,12 +451,12 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   struct element *elt =  (struct element*)malloc(sizeof(struct element));
   DL_FOREACH(elementParam,elt) {
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
-      if(strcmp(obj->typeObj,elt->typeObj)==0 && strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && strcmp(obj->localObj,elt->localObj)==0 ){
+      if( strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0)  ){
           repetido =1;
       }
     }
   }
-  if(repetido == 0){
+  if(repetido == 0){ // adiciona caso nao seja repetido
     DL_APPEND(elementParam, obj);
   }
   else{
@@ -471,7 +473,7 @@ char* concat(const char *str1, const char *str2){
   return output;
 }
 
-void insert_function_scope(char *nameFunction){
+void verify_insert_function_scope(char *nameFunction){
   struct element *obj =  (struct element*)malloc(sizeof(struct element));
   DL_FOREACH(elementParam,obj) {
     if(strcmp(scope_current,obj->scopeName)==0 && strcmp("argumento", obj->localObj)==0 && obj->typeObj == NULL){
@@ -635,8 +637,6 @@ int main( int argc, char **argv ){
   if(deuErro == 0){
     printf("\n\n ####  Arvore Sintatica  #### \n\n");
     show_tree(begginTree, syntaticTree);
-
-
   }
   else{
     printf("\n\nERROS APARECERAM! NAO SERA MOSTRADO A ARVORE SINTATICA NEM A TABELA DE SIMBOLOS\n");
@@ -644,7 +644,9 @@ int main( int argc, char **argv ){
   printf("\n\n ####  Tabela Sintatica  #### \n\n");
   show_symbolTable();
   show_elements();
-  free_tree(syntaticTree); 
+  if(deuErro == 0){
+    free_tree(syntaticTree); 
+  }
   free_symbolTable(syntaticTree); 
   fclose(yyin);
   yylex_destroy();
