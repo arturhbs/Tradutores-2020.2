@@ -16,8 +16,8 @@ extern int currentLine;
 extern int positionWord;
 int DEPURADOR = 0; 
 int deuErro = 0; 
+int sumErrors =0;
 char* scope_current = "GLOBAL";
-char* scope_current_aux = "GLOBAL";
 
 // Arvore sintatica
 struct nodeTree {
@@ -54,7 +54,7 @@ struct symbolTable* syntaticTable = NULL;
 struct element* elementParam = NULL;
 struct element* elementParamCallFunction = NULL;
 struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
-void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
+// void addition_symbolTable(char *nameObj,char *typeObj,char *localObj);
 void insert_scope();
 void  show_elements();
 void delete_elements();
@@ -64,6 +64,7 @@ void verify_var_declaration(char *name);
 void verify_insert_function_scope();
 void semantic_verify();
 void verify_main_declarion();
+void verify_number_arguments();
 %}
 
 %union {
@@ -106,14 +107,14 @@ declaracoesExtenas: funcoes                                 {if(DEPURADOR)printf
                   | declaracoesExtenas declaracoesVariaveis {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);                                                              
                                                             }
-                  | error                                   {deuErro =1;
+                  | error                                   {deuErro =1;sumErrors++;
                                                             }
 ;
 
 declaracoesVariaveis: 
   tipagem ID ';' {if(DEPURADOR)printf("<declaracoesVariaveis> <== <tipagem> ID ';'\n");
                   $$ = addition_node($1, NULL, NULL, NULL, "declaracoesVariaveis", $2, NULL, NULL);
-                  addition_symbolTable($2, $1->firstSymbol,  "Variavel");
+                  // addition_symbolTable($2, $1->firstSymbol,  "Variavel");
                   insert_scope($1->firstSymbol, $2, "variavel");            
                  }
 ;
@@ -123,19 +124,19 @@ funcoes: tipagem ID { scope_current=$2;
                     }
       '(' parametros ')'  posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
                                                        $$ = addition_node($1, $5, $7, NULL, "funcoes", $2, NULL, NULL);  
-                                                       addition_symbolTable( $2, $1->firstSymbol, "Funcao");
+                                                      //  addition_symbolTable( $2, $1->firstSymbol, "Funcao");
                                                        scope_current = "GLOBAL"; // quando acaba a funcao, ele abre o escopo como gloabal
                                                       }
 ;
 
 parametros: parametros ',' tipagem ID { if(DEPURADOR)printf("<parametros> <== <parametros> , <tipagem> ID\n");
                                         $$ = addition_node($1, $3, NULL, NULL, "parametros", $4, NULL, NULL);
-                                        addition_symbolTable($4, $3->firstSymbol,  "Parametro");
+                                        // addition_symbolTable($4, $3->firstSymbol,  "Parametro");
                                         insert_scope($3->firstSymbol, $4, "parametro");              
                                       }
           | tipagem ID                { if(DEPURADOR)printf("<parametros> <== <tipagem> ID\n");
                                         $$ = addition_node($1,NULL ,NULL ,NULL , "parametros", $2, NULL, NULL);            
-                                        addition_symbolTable($2, $1->firstSymbol,  "Parametro");
+                                        // addition_symbolTable($2, $1->firstSymbol,  "Parametro");
                                         insert_scope($1->firstSymbol, $2, "parametro");            
                                       }
           | %empty                    { if(DEPURADOR)printf("<parametros> <== E\n");
@@ -191,7 +192,7 @@ sentenca: condicionalSentenca    { if(DEPURADOR)printf("<sentenca> <== <condicio
         | conjuntoForall         { if(DEPURADOR)printf("<sentenca> <== <conjuntoForall>\n");
                                    $$ = $1;
                                  }  
-        | error                   {deuErro =1;
+        | error                   {deuErro =1;sumErrors++;
                                   }
 ;
 
@@ -448,7 +449,7 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
 
   // Verico se já existe na tabela de simbolos a variável declarada em um mesmo escopo, se sim, mostrar erro
   int repetido = 0;
-  struct element *elt =  (struct element*)malloc(sizeof(struct element));
+  struct element *elt;
   DL_FOREACH(elementParam,elt) {
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
       if( strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
@@ -461,11 +462,13 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   }
   else{
     if( strcmp(local,"funcao")==0){
+      sumErrors++;
       printf("\n##### Ocorreu erro SEMANTICO ######\n");
       printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
       printf("##### Fim Erro     #####\n\n");
     }
     else{
+      sumErrors++;
       printf("\n##### Ocorreu erro SEMANTICO ######\n");
       printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, variável %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
       printf("##### Fim Erro     #####\n\n");
@@ -481,23 +484,51 @@ char* concat(const char *str1, const char *str2){
 }
 
 void verify_insert_function_scope(char *nameFunction){
-  struct element *obj =  (struct element*)malloc(sizeof(struct element));
+  struct element *obj;
+  // Verificando se a funcao ja foi declarada anteriormente
+  int functionAlreadyDeclared=0;
+  int countParams = 0;
+  DL_FOREACH(elementParam,obj) {
+    if(strcmp(nameFunction,obj->nameObj)==0 && strcmp("funcao", obj->localObj)==0 ){
+      functionAlreadyDeclared = 1;
+    }
+    if(strcmp(nameFunction,obj->scopeName)==0 && strcmp("parametro",obj->localObj)==0 ){
+      countParams++;
+    }
+  }
+  if(functionAlreadyDeclared == 0){
+      sumErrors++;
+      printf("\n##### Ocorreu erro SEMANTICO ######\n");
+      printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s não declarada anteriormente para que seja feito chamada.\n\n", currentLine, positionWord, nameFunction);
+      printf("##### Fim Erro     #####\n\n");
+  }
+
+  // setando o tipo dos argumentos para ficar igual ao nome da funcao
+  int countArguments = 0;
   DL_FOREACH(elementParam,obj) {
     if(strcmp(scope_current,obj->scopeName)==0 && strcmp("argumento", obj->localObj)==0 && obj->typeObj == NULL){
       obj->typeObj = nameFunction;
+      countArguments++;
     }
-  }
+  }        
+  if(countArguments != countParams){
+    sumErrors++;
+    printf("\n##### Ocorreu erro SEMANTICO ######\n");
+    printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s tem menos/mais argumentos que a quantidade de parametros da funcao chamada.\n\n", currentLine, positionWord, nameFunction);
+    printf("##### Fim Erro     #####\n\n");
+  }             
 }
 
 void semantic_verify(){
   verify_main_declarion();
+  // verify_number_arguments();
 }
 
 void verify_var_declaration(char *name){
-  struct element *obj =  (struct element*)malloc(sizeof(struct element));
+  struct element *obj;
   int passou = 0;
   DL_FOREACH(elementParam,obj) { 
-    if(strcmp(name,obj->nameObj)==0 && strcmp(scope_current,obj->scopeName)==0 ){
+    if(strcmp(name,obj->nameObj)==0 && (strcmp(scope_current,obj->scopeName)==0 || strcmp("GLOBAL",obj->scopeName)==0 )){
       passou = 1;
     }
   }
@@ -509,7 +540,7 @@ void verify_var_declaration(char *name){
 }
 
 void verify_main_declarion(){
-  struct element *obj =  (struct element*)malloc(sizeof(struct element));
+  struct element *obj;
   int passou = 0;
   DL_FOREACH(elementParam,obj) { 
     if(strcmp("main",obj->scopeName)==0 ){
@@ -524,7 +555,7 @@ void verify_main_declarion(){
 }
 
 void show_elements(){
-  struct element *elt =  (struct element*)malloc(sizeof(struct element));
+  struct element *elt;
   DL_FOREACH(elementParam,elt) {
     printf("type= %15s\t",elt->typeObj);
     printf("|id= %15s\t",elt->nameObj);
@@ -535,8 +566,8 @@ void show_elements(){
 }
 
 void delete_elements(){
-  struct element *elt =  (struct element*)malloc(sizeof(struct element));
-  struct element *tmp =  (struct element*)malloc(sizeof(struct element)); // ACHO QUE TEREI QUE DAR FREE DPS
+  struct element *elt;
+  struct element *tmp; // ACHO QUE TEREI QUE DAR FREE DPS
   DL_FOREACH_SAFE(elementParam,elt,tmp) {
     DL_DELETE(elementParam,elt);
     free(elt);
@@ -594,37 +625,16 @@ void free_tree(struct nodeTree *nodeTree){
   free(nodeTree);
 }
 
-void addition_symbolTable(char *nameObj,char *typeObj,char *localObj){
-  struct symbolTable *obj = (struct symbolTable*)malloc(sizeof (struct symbolTable));
-  obj->nameObj = nameObj;
-  obj->typeObj = typeObj;
-  obj->localObj = localObj;
 
-  char *concatStringScope = malloc(strlen(nameObj) + strlen(localObj) + 1);
-  strcpy(concatStringScope, nameObj);
-  strcat(concatStringScope, localObj);
-  // printf("Concat string  = %s", concatStringScope );
-  obj->scope = concatStringScope;
-
-  HASH_ADD_STR(syntaticTable, nameObj, obj);
-  
-}
-
-void show_symbolTable() {
-  struct symbolTable *obj;
-
-  for(obj=syntaticTable; obj != NULL; obj=obj->hh.next) {
-    printf("nameObj: %20s | typeObj: %10s | localObj: %10s | scope: %10s\n", obj->nameObj, obj->typeObj, obj->localObj, obj->scope);
-  }
-
-}
-
-void free_symbolTable(){
-    struct symbolTable *s, *tmp;
-    HASH_ITER(hh, syntaticTable, s, tmp) {
-      HASH_DEL(syntaticTable, s);
-      free(s);
+void free_list(){
+  struct element *elt;
+  struct element *tmp;
+  /* now delete each element, use the safe iterator */
+    DL_FOREACH_SAFE(elementParam,elt,tmp) {
+      DL_DELETE(elementParam,elt);
+      free(elt);
     }
+
 }
 
 void yyerror(const char *string_node) {
@@ -649,13 +659,17 @@ int main( int argc, char **argv ){
     printf("\n\nERROS APARECERAM! NAO SERA MOSTRADO A ARVORE SINTATICA NEM A TABELA DE SIMBOLOS\n");
   }
   printf("\n\n ####  Tabela Sintatica  #### \n\n");
-  show_symbolTable();
+  // show_symbolTable();
   printf("\n");
   show_elements();
+  printf("######\n");
+  printf("Foram encontrados %d\n",sumErrors); 
+  printf("######\n");
   if(deuErro == 0){
     free_tree(syntaticTree); 
   }
-  free_symbolTable(syntaticTree); 
+  // free_symbolTable(syntaticTree); 
+  free_list();
   fclose(yyin);
   yylex_destroy();
   return 0;
