@@ -40,7 +40,7 @@ UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
 STRING \"[^\"][^\"]+\"
-CHAR '[^']'
+CHAR '[^']?'|'\\[^']'
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
