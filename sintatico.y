@@ -451,7 +451,7 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   struct element *elt =  (struct element*)malloc(sizeof(struct element));
   DL_FOREACH(elementParam,elt) {
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
-      if( strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0)  ){
+      if( strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
           repetido =1;
       }
     }
@@ -460,9 +460,16 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
     DL_APPEND(elementParam, obj);
   }
   else{
-    printf("\n##### Ocorreu erro SEMANTICO ######\n");
-    printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, variável %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
-    printf("##### Fim Erro     #####\n\n");
+    if( strcmp(local,"funcao")==0){
+      printf("\n##### Ocorreu erro SEMANTICO ######\n");
+      printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
+      printf("##### Fim Erro     #####\n\n");
+    }
+    else{
+      printf("\n##### Ocorreu erro SEMANTICO ######\n");
+      printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, variável %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
+      printf("##### Fim Erro     #####\n\n");
+    }
   }
 }
 
@@ -643,6 +650,7 @@ int main( int argc, char **argv ){
   }
   printf("\n\n ####  Tabela Sintatica  #### \n\n");
   show_symbolTable();
+  printf("\n");
   show_elements();
   if(deuErro == 0){
     free_tree(syntaticTree); 
