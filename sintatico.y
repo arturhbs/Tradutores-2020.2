@@ -16,7 +16,6 @@ extern int currentLine;
 extern int positionWord;
 int DEPURADOR = 0; 
 int deuErro = 0; 
-int sumErrors =0;
 char* scope_current = "GLOBAL";
 
 // Arvore sintatica
@@ -65,6 +64,7 @@ void verify_insert_function_scope();
 void semantic_verify();
 void verify_main_declarion();
 void verify_number_arguments();
+void verify_return_scope();
 %}
 
 %union {
@@ -107,7 +107,7 @@ declaracoesExtenas: funcoes                                 {if(DEPURADOR)printf
                   | declaracoesExtenas declaracoesVariaveis {if(DEPURADOR)printf("<declaracoesExternas> <== <declaracoExternas> <declaracoesVariaveis>\n");
                                                               $$ = addition_node($1, $2, NULL, NULL, "declaracoesExternas", NULL, NULL, NULL);                                                              
                                                             }
-                  | error                                   {deuErro =1;sumErrors++;
+                  | error                                   {deuErro =1;
                                                             }
 ;
 
@@ -125,6 +125,7 @@ funcoes: tipagem ID { scope_current=$2;
       '(' parametros ')'  posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
                                                        $$ = addition_node($1, $5, $7, NULL, "funcoes", $2, NULL, NULL);  
                                                       //  addition_symbolTable( $2, $1->firstSymbol, "Funcao");
+                                                       verify_return_scope();
                                                        scope_current = "GLOBAL"; // quando acaba a funcao, ele abre o escopo como gloabal
                                                       }
 ;
@@ -192,7 +193,7 @@ sentenca: condicionalSentenca    { if(DEPURADOR)printf("<sentenca> <== <condicio
         | conjuntoForall         { if(DEPURADOR)printf("<sentenca> <== <conjuntoForall>\n");
                                    $$ = $1;
                                  }  
-        | error                   {deuErro =1;sumErrors++;
+        | error                   {deuErro =1;
                                   }
 ;
 
@@ -234,9 +235,9 @@ posIFForallExists: posDeclaracao  { if(DEPURADOR)printf("<posIFForallExists> <==
                                   }
 ;
 
-iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posDeclaracao { if(DEPURADOR)printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");
-                                                                                                 $$ = addition_node($3, $4, $6 , $8, "iteracaoSentenca", $1, NULL, NULL);                                                                                                                                                                                                                                                                                   
-                                                                                               }
+iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posIFForallExists { if(DEPURADOR)printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");
+                                                                                                      $$ = addition_node($3, $4, $6 , $8, "iteracaoSentenca", $1, NULL, NULL);                                                                                                                                                                                                                                                                                   
+                                                                                                    }
 ;
 
 returnSentenca: RETURN expressaoSimplificada ';' { if(DEPURADOR)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
@@ -462,13 +463,11 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   }
   else{
     if( strcmp(local,"funcao")==0){
-      sumErrors++;
       printf("\n##### Ocorreu erro SEMANTICO ######\n");
       printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
       printf("##### Fim Erro     #####\n\n");
     }
     else{
-      sumErrors++;
       printf("\n##### Ocorreu erro SEMANTICO ######\n");
       printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, variável %s declarada de forma repetida.\n\n", currentLine, positionWord, nameParam);
       printf("##### Fim Erro     #####\n\n");
@@ -497,7 +496,6 @@ void verify_insert_function_scope(char *nameFunction){
     }
   }
   if(functionAlreadyDeclared == 0){
-      sumErrors++;
       printf("\n##### Ocorreu erro SEMANTICO ######\n");
       printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s não declarada anteriormente para que seja feito chamada.\n\n", currentLine, positionWord, nameFunction);
       printf("##### Fim Erro     #####\n\n");
@@ -512,7 +510,6 @@ void verify_insert_function_scope(char *nameFunction){
     }
   }        
   if(countArguments != countParams){
-    sumErrors++;
     printf("\n##### Ocorreu erro SEMANTICO ######\n");
     printf("\n\t[ERRO SEMANTICO] linha = %d, coluna = %d, funcao %s tem menos/mais argumentos que a quantidade de parametros da funcao chamada.\n\n", currentLine, positionWord, nameFunction);
     printf("##### Fim Erro     #####\n\n");
@@ -550,6 +547,26 @@ void verify_main_declarion(){
   if (passou == 0){
     printf("\n##### Ocorreu erro SEMANTICO ######\n");
     printf("\n\t[ERRO SEMANTICO] Não há função 'main' no codigo.\n\n");
+    printf("##### Fim Erro     #####\n\n");
+  }
+}
+
+void verify_return_scope(){
+  struct element *obj;
+  int hasReturn = 0;
+  DL_FOREACH(elementParam,obj) { 
+    // verificando se ha return no escopo
+    if(strcmp(obj->scopeName,scope_current)==0 && strcmp(obj->localObj,"return")==0){
+      hasReturn = 1;
+    }
+    // setando  o valor do escopo atual como tipo par nao ficar como null e ter chance de segfault
+    if(obj->typeObj == NULL && strcmp(obj->localObj,"return")==0){
+      obj->typeObj = scope_current;
+    }
+  }
+  if(hasReturn == 0){
+     printf("\n##### Ocorreu erro SEMANTICO ######\n");
+    printf("\n\t[ERRO SEMANTICO] Não há return no escopo '%s' no codigo.\n\n", scope_current);
     printf("##### Fim Erro     #####\n\n");
   }
 }
@@ -625,7 +642,6 @@ void free_tree(struct nodeTree *nodeTree){
   free(nodeTree);
 }
 
-
 void free_list(){
   struct element *elt;
   struct element *tmp;
@@ -662,9 +678,7 @@ int main( int argc, char **argv ){
   // show_symbolTable();
   printf("\n");
   show_elements();
-  printf("######\n");
-  printf("Foram encontrados %d\n",sumErrors); 
-  printf("######\n");
+ 
   if(deuErro == 0){
     free_tree(syntaticTree); 
   }
