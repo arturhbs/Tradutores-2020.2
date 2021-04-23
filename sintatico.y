@@ -72,10 +72,10 @@ void verify_return_scope();
   struct nodeTree* node;
 }
 
-%type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca
+%type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca conjuntoSentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
-%type <node>  argumentos argumentosLista conjuntoSentenca conjuntoIN expressao expressaoFor expressaoSimplificada expressaoSimplificada2 expressaoSimplificada3
-%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus
+%type <node>  argumentos argumentosLista  conjuntoIN expressao expressaoFor expressaoSimplificada expressaoSimplificada2 expressaoSimplificada3 expressaoSimplificada4
+%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus condicionalSentenca2
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
@@ -201,8 +201,11 @@ conjuntoForall:  SET_FORALL'('conjuntoIN ')' posIFForallExists  { if(DEPURADOR)p
                                                                   $$ = addition_node($3, $5, NULL, NULL, "conjuntoForall", $1, NULL, NULL);
                                                                 }
 ;
-
-condicionalSentenca: IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
+condicionalSentenca: {printf("entrou");}condicionalSentenca2  { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
+                                                                                      $$ = $2;                                                                        
+                                                                                    }
+;
+condicionalSentenca2: IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
                                                                                       $$ = addition_node($3, $5, NULL, NULL, "condicionalSentenca", $1, NULL, NULL);                                                                        
                                                                                     }
                    | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");
@@ -315,8 +318,8 @@ expressaoFor: ID ASSING expressaoFor { if(DEPURADOR)printf("<expressaoFor> <== I
                                      } 
 ; 
 
-expressaoSimplificada:  expressaoSimplificada operacaoLogic termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
-                                                                         $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);  
+expressaoSimplificada:  expressaoSimplificada operacaoLogic expressaoSimplificada2       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
+                                                                              $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);  
                                                                         } 
                         | expressaoSimplificada2                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                                           $$ = $1;
@@ -325,21 +328,28 @@ expressaoSimplificada:  expressaoSimplificada operacaoLogic termo       { if(DEP
 ;
 
 expressaoSimplificada2: 
-  expressaoSimplificada operacaoNumerica termo    { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
-                                                    $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada2", NULL, NULL ,NULL);
-                                                  }
-  | expressaoSimplificada3                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
-                                                   $$ = $1;
-                                                  }
+  expressaoSimplificada2 operacaoComparacao expressaoSimplificada3  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
+                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);
+                                                                    }
+  | expressaoSimplificada3                                          { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                                                                      $$ = $1;
+                                                                    }
 ;
 
-expressaoSimplificada3:
-  expressaoSimplificada operacaoMultDiv termo       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
-                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);  
-                                                    }  
-  | expressaoSimplificada operacaoComparacao termo  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
-                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);
-                                                    }
+expressaoSimplificada3: 
+  expressaoSimplificada3 operacaoNumerica expressaoSimplificada4  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
+                                                                    $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada2", NULL, NULL ,NULL);
+                                                                  }
+  | expressaoSimplificada4                                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                                                                    $$ = $1;
+                                                                  }
+;
+
+expressaoSimplificada4:
+  expressaoSimplificada4 operacaoMultDiv expressaoSimplificadaMinus { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
+                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);  
+                                                                    }  
+  
   | expressaoSimplificadaMinus                      { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                       $$ = $1;
                                                     }
@@ -354,7 +364,7 @@ expressaoSimplificadaMinus:
               }
 ;
 
-;
+
 operacaoNumerica: ADD  { if(DEPURADOR)printf("<operacaoNumerica> <== ADD\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
                        }
