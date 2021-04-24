@@ -17,6 +17,11 @@ extern int positionWord;
 int DEPURADOR = 0; 
 int deuErro = 0; 
 char* scope_current = "GLOBAL";
+char* scope_current_aux = "GLOBAL";
+int levelScopeGlobal = 0;
+char *currentTypeCast; // if 0 = float else 1 = int
+int needModifyCast=0;
+int callFuncIntFloat = 0;
 
 // Arvore sintatica
 struct nodeTree {
@@ -41,10 +46,11 @@ struct symbolTable {
 
 // Declaracoes escopo
 struct element{
-  char *typeObj;
+  char *typeObj; 
   char *nameObj;
   char *scopeName;
   char *localObj;
+  int levelScope;
   struct element *prev,*next;
 };
 
@@ -65,6 +71,7 @@ void semantic_verify();
 void verify_main_declarion();
 void verify_number_arguments();
 void verify_return_scope();
+char* isIntFloatCurrentType(char *id);
 %}
 
 %union {
@@ -75,7 +82,7 @@ void verify_return_scope();
 %type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca conjuntoSentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
 %type <node>  argumentos argumentosLista  conjuntoIN expressao expressaoFor expressaoSimplificada expressaoSimplificada2 expressaoSimplificada3 expressaoSimplificada4
-%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus condicionalSentenca2
+%type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus 
 
 
 %token <string_node> TYPE_INT TYPE_FLOAT TYPE_ELEM TYPE_SET
@@ -120,6 +127,7 @@ declaracoesVariaveis:
 ;
 
 funcoes: tipagem ID { scope_current=$2;
+                      levelScopeGlobal ++;
                       insert_scope($1->firstSymbol,$2,"funcao");
                     }
       '(' parametros ')'  posDeclaracao {if(DEPURADOR)printf("<funcoes> <==  <tipagem> ID '(' <parametros> ')' <posDeclaracao>\n");
@@ -127,6 +135,7 @@ funcoes: tipagem ID { scope_current=$2;
                                                       //  addition_symbolTable( $2, $1->firstSymbol, "Funcao");
                                                        verify_return_scope();
                                                        scope_current = "GLOBAL"; // quando acaba a funcao, ele abre o escopo como gloabal
+                                                       levelScopeGlobal = 0;
                                                       }
 ;
 
@@ -201,16 +210,14 @@ conjuntoForall:  SET_FORALL'('conjuntoIN ')' posIFForallExists  { if(DEPURADOR)p
                                                                   $$ = addition_node($3, $5, NULL, NULL, "conjuntoForall", $1, NULL, NULL);
                                                                 }
 ;
-condicionalSentenca: {printf("entrou");}condicionalSentenca2  { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
-                                                                                      $$ = $2;                                                                        
-                                                                                    }
-;
-condicionalSentenca2: IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
+
+condicionalSentenca: 
+   IF '(' condicaoIF ')' posIFForallExists %prec THEN             { if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao>\n");
                                                                                       $$ = addition_node($3, $5, NULL, NULL, "condicionalSentenca", $1, NULL, NULL);                                                                        
                                                                                     }
-                   | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");
-                                                                                      $$ = addition_node($3, $5, $7, NULL, "condicionalSentenca", $1, $6 , NULL);                                                                        
-                                                                                    }
+  | IF '(' condicaoIF ')' posIFForallExists ELSE posIFForallExists {if(DEPURADOR)printf("<condicionalSentenca> <== IF '(' <condicaoIF> ')' <posDeclaracao> ELSE posDeclaracao\n");
+                                                                    $$ = addition_node($3, $5, $7, NULL, "condicionalSentenca", $1, $6 , NULL);                                                                        
+                                                                  }
 ;
 
 condicaoIF: expressaoSimplificada           { if(DEPURADOR)printf("<condicaoIF> <== expressaoSimplificada\n");
@@ -230,12 +237,15 @@ condicaoIF: expressaoSimplificada           { if(DEPURADOR)printf("<condicaoIF> 
                                             }
 ;
 
-posIFForallExists: posDeclaracao  { if(DEPURADOR)printf("<posIFForallExists> <== posDeclaracao\n");
-                                    $$ = $1;                                                                                                                                                                                                 
-                                  }
-                  | sentenca      { if(DEPURADOR)printf("<posIFForallExists> <== sentenca\n");
-                                    $$ = $1;                                                                                                                                                                                    
-                                  }
+posIFForallExists: 
+                     {levelScopeGlobal ++;}
+  posDeclaracao     { if(DEPURADOR)printf("<posIFForallExists> <== posDeclaracao\n");
+                      $$ = $2;     
+                      levelScopeGlobal--;                                                            
+                    }
+  | sentenca      { if(DEPURADOR)printf("<posIFForallExists> <== sentenca\n");
+                    $$ = $1;                                                                                                                                                                                 
+                  }
 ;
 
 iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')' posIFForallExists { if(DEPURADOR)printf("<iteracaoSentenca> <== for '(' <expressao> ';' <expressaoSimplificada> ';' <expressao> ')' <posDeclaracao>\n");
@@ -270,11 +280,21 @@ argumentos: argumentosLista { if(DEPURADOR)printf("<argumentos> <== <argumentosL
 
 argumentosLista: expressaoSimplificada                      { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada>\n");
                                                               $$ = $1;         
-                                                              insert_scope(NULL,$1->firstSymbol, "argumento");                                                                                                                                                                    
+                                                              if($1->firstSymbol != NULL){ // revisar futuramente
+                                                                insert_scope(NULL,$1->firstSymbol, "argumento");
+                                                              }
+                                                              else{
+                                                                insert_scope(NULL,".", "argumento");
+                                                              }
                                                             }
                |  argumentosLista ',' expressaoSimplificada { if(DEPURADOR)printf("<argumentosLista> <== <expressaoSimplificada> ',' <argumentosLista>\n");
                                                               $$ = addition_node($1 ,$3 ,NULL ,NULL, "argumentosLista", NULL , NULL ,NULL);                                                             
-                                                              insert_scope(NULL,$3->firstSymbol, "argumento");          
+                                                              if($3->firstSymbol != NULL){ // revisar futuramente
+                                                                insert_scope(NULL,$3->firstSymbol, "argumento"); 
+                                                              }
+                                                              else{
+                                                                insert_scope(NULL,".", "argumento"); 
+                                                              }
                                                             }
      
 ;
@@ -301,9 +321,14 @@ conjuntoIN: expressaoSimplificada SET_IN conjuntoSentenca    { if(DEPURADOR)prin
                                                                   }       
 ;                    
 
-expressao: ID ASSING expressao        { if(DEPURADOR)printf("<expressao> <== ID ASSING expressao\n");
-                                        $$ = addition_node($3 ,NULL ,NULL ,NULL, "expressao", $1 , $2 ,NULL);
+expressao: ID                         {currentTypeCast = isIntFloatCurrentType($1);
+                                       needModifyCast=1;
+                                        }
+        
+          ASSING expressao            { if(DEPURADOR)printf("<expressao> <== ID ASSING expressao\n");
+                                        $$ = addition_node($4 ,NULL ,NULL ,NULL, "expressao", $1 , $3 ,NULL);
                                         verify_var_declaration($1); 
+                                        needModifyCast = 0;
                                       }                                       
          | expressaoSimplificada ';'  { if(DEPURADOR)printf("<expressao> <== expressaoSimplificada\n");
                                         $$ = $1; 
@@ -417,14 +442,39 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                        $$ = $2;
                                      }
      | ID                            { if(DEPURADOR)printf("<termo> <== ID\n");
-                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);  
                                        verify_var_declaration($1);
+                                       // Verifica se o id eh int ou float para ser feito o cast
+                                       char *idIntFloat = isIntFloatCurrentType($1);
+                                       if(needModifyCast == 1 && strcmp(currentTypeCast,"float")==0 && strcmp(idIntFloat,"int")==0 ){
+                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "IntToFloat", $1, NULL ,NULL);                                         
+                                       }
+                                       else{
+                                        if(needModifyCast == 1 && strcmp(currentTypeCast,"int")==0 && strcmp(idIntFloat,"float")==0 ){
+                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "FloatToInt", $1, NULL ,NULL);                                         
+                                        }
+                                        else{
+                                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);  
+                                        }
+                                       }
+                                        
                                      }
      | INT                           { if(DEPURADOR)printf("<termo> <== INT\n");
-                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                       // Verifica se o id eh int ou float para ser feito o cast
+                                       if(needModifyCast == 1 && strcmp(currentTypeCast,"float")==0 ){
+                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "IntToFloat", $1, NULL ,NULL);
+                                       }
+                                       else{
+                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                       }
                                      }     
      | FLOAT                         { if(DEPURADOR)printf("<termo> <== FLOAT\n");
-                                       $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                       // Verifica se o id eh int ou float para ser feito o cast
+                                        if(needModifyCast == 1 && strcmp(currentTypeCast,"int")==0 ){
+                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "FloatToInt", $1, NULL ,NULL);
+                                        }
+                                        else{
+                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                        }
                                      }
      | EMPTY_LABEL                   { if(DEPURADOR)printf("<termo> <== EMPTY_LABEL\n");
                                        $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
@@ -436,10 +486,30 @@ termo: '(' expressaoSimplificada ')' { if(DEPURADOR)printf("<termo> <== '(' <exp
                                         $$ = addition_node(NULL ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
                                      }
      | ID                            {  
-                                        insert_scope("call", $1, "callFunc");
-                                     }
+                                       insert_scope("call", $1, "callFunc");
+                                       char *idIntFloat = isIntFloatCurrentType($1);
+                                       callFuncIntFloat=0; // inicializando em 0 pq se nao encontrar nada eh pq n precisa de cast
+                                       if(needModifyCast == 1 && strcmp(currentTypeCast,"float")==0 && strcmp(idIntFloat,"int")==0 ){
+                                         callFuncIntFloat =1;
+                                       }
+                                       else{
+                                        if(needModifyCast == 1 && strcmp(currentTypeCast,"int")==0 && strcmp(idIntFloat,"float")==0 ){
+                                         callFuncIntFloat = 2;                                        
+                                        }
+                                       }
+                                    }
         '(' argumentos')'               { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
-                                          $$ = addition_node($4 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                          if(callFuncIntFloat==0){
+                                            $$ = addition_node($4 ,NULL ,NULL ,NULL, "termo", $1, NULL ,NULL);
+                                          }
+                                          else{
+                                            if(callFuncIntFloat==1){
+                                              $$ = addition_node($4 ,NULL ,NULL ,NULL, "IntToFloat", $1, NULL ,NULL);
+                                            }
+                                            else{
+                                              $$ = addition_node($4 ,NULL ,NULL ,NULL, "FloatToInt", $1, NULL ,NULL);
+                                            }
+                                          }
                                           verify_insert_function_scope($1);
                                         }
      | conjuntoSentenca              { if(DEPURADOR)printf("<termo> <== ID '(' argumentos')' \n");
@@ -457,13 +527,14 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   obj->nameObj = nameParam;
   obj->scopeName = scope_current;
   obj->localObj = local;
+  obj->levelScope = levelScopeGlobal;
 
   // Verico se já existe na tabela de simbolos a variável declarada em um mesmo escopo, se sim, mostrar erro
   int repetido = 0;
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
-      if( strcmp(obj->nameObj,elt->nameObj)==0  && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
+      if( strcmp(obj->nameObj,elt->nameObj)==0 && obj->levelScope != levelScopeGlobal && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
           repetido =1;
       }
     }
@@ -490,6 +561,23 @@ char* concat(const char *str1, const char *str2){
   strcpy(output, str1);
   strcat(output, str2);
   return output;
+}
+
+char* isIntFloatCurrentType(char *id){
+  struct element *elt;
+  DL_FOREACH(elementParam,elt) {
+    if(strcmp(elt->nameObj,id)==0){
+      if(strcmp(elt->typeObj,"int")==0){
+        return "int";
+      }
+      else{
+         if(strcmp(elt->typeObj,"float")==0){
+        return "float";
+        }    
+      }
+    }
+  }
+  return "Non";
 }
 
 void verify_insert_function_scope(char *nameFunction){
@@ -535,7 +623,7 @@ void verify_var_declaration(char *name){
   struct element *obj;
   int passou = 0;
   DL_FOREACH(elementParam,obj) { 
-    if(strcmp(name,obj->nameObj)==0 && (strcmp(scope_current,obj->scopeName)==0 || strcmp("GLOBAL",obj->scopeName)==0 )){
+    if(strcmp(name,obj->nameObj)==0 && levelScopeGlobal>=obj->levelScope && (strcmp(scope_current,obj->scopeName)==0 || strcmp("GLOBAL",obj->scopeName)==0 )){
       passou = 1;
     }
   }
@@ -584,10 +672,13 @@ void verify_return_scope(){
 void show_elements(){
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
-    printf("type= %15s\t",elt->typeObj);
-    printf("|id= %15s\t",elt->nameObj);
-    printf("|scope= %15s\t", elt->scopeName);
-    printf("|local= %15s\n", elt->localObj);
+    if(strcmp(elt->localObj, "funcao")==0 || strcmp(elt->localObj, "variavel")==0 || strcmp(elt->localObj, "parametro")==0 ){
+      printf("type= %10s\t",elt->typeObj);
+      printf("|id= %15s\t",elt->nameObj);
+      printf("|scope= %15s\t", elt->scopeName);
+      printf("|local= %15s\n", elt->localObj);
+      // printf("|local= %3d\n", elt->levelScope);
+    }
   }
   printf("\n\n");
 }
@@ -682,7 +773,7 @@ int main( int argc, char **argv ){
     show_tree(begginTree, syntaticTree);
   }
   else{
-    printf("\n\nERROS APARECERAM! NAO SERA MOSTRADO A ARVORE SINTATICA NEM A TABELA DE SIMBOLOS\n");
+    printf("\n\n***ERROS APARECERAM NO SINTATICO! NAO SERA MOSTRADO A ARVORE SINTATICA*** \n");
   }
   printf("\n\n ####  Tabela Sintatica  #### \n\n");
   // show_symbolTable();
