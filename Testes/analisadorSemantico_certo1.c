@@ -13,10 +13,13 @@ int test_set(set conjunto){
 }
 
 int main(){
-    int a;
+    float a;
     set conjuntoParaTest;
-    a = 3 / 3 +2;
-    test_set(conjuntoParaTest);
+    a=3.2;
+    if(a > 2 || a +3 < 3 || test_set(conjuntoParaTest) <44){
+        a = 3 / 3 - 2.5 * test_set(conjuntoParaTest);
+    }
+    else return 1;
     return 0;
 }
 
