@@ -5,7 +5,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "ut_hash.h"
+#include <string.h>
 #include "ut_list.h"
 
 int yylex();
@@ -35,14 +35,6 @@ struct nodeTree {
   char *thirdSymbol;          // terceiro token da arvore
 };
 
-// Arvore sintatica
-struct symbolTable {
-  char *nameObj;     // nome do objeto que esta no codigo 
-  char *typeObj;     // int;float;set;elem
-  char *localObj;    // variavel;funcao
-  char *scope;       // escopo em que esta inserido
-  UT_hash_handle hh; // auxiliar para hash
-};
 
 // Declaracoes escopo
 struct element{
@@ -55,7 +47,6 @@ struct element{
 };
 
 struct nodeTree* syntaticTree = NULL;
-struct symbolTable* syntaticTable = NULL;
 struct element* elementParam = NULL;
 struct element* elementParamCallFunction = NULL;
 struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *secondNode, struct nodeTree *thirdNode, struct nodeTree *fourthNode,  char *nameNode, char *firstSymbol, char *secondSymbol, char *thirdSymbol );
@@ -538,7 +529,7 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
-      if( strcmp(obj->nameObj,elt->nameObj)==0 && obj->levelScope != levelScopeGlobal && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
+      if( strcmp(obj->nameObj,elt->nameObj)==0 && obj->levelScope == levelScopeGlobal && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
           repetido =1;
       }
     }
