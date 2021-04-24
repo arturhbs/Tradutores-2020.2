@@ -18,10 +18,10 @@ int DEPURADOR = 0;
 int deuErro = 0; 
 char* scope_current = "GLOBAL";
 char* scope_current_aux = "GLOBAL";
-int levelScopeGlobal = 0;
-char *currentTypeCast; // if 0 = float else 1 = int
-int needModifyCast=0;
-int callFuncIntFloat = 0;
+int levelScopeGlobal = 0; // verifica o nivel do escopo quanto ao if,for,forall...
+char *currentTypeCast; // verifica o tipo que precisa ser comparado para verificar a necessidade de cast
+int needModifyCast=0; // eh setado como 1 apenas nos pontos que realmente precisam de cast
+int callFuncIntFloat = 0; 
 
 // Arvore sintatica
 struct nodeTree {
@@ -63,7 +63,6 @@ struct nodeTree* addition_node( struct nodeTree *firstNode, struct nodeTree *sec
 void insert_scope();
 void  show_elements();
 void delete_elements();
-char* concat(const char *s1, const char *s2);
 void insert_scope(char *typeParam, char *nameParam, char *scope);
 void verify_var_declaration(char *name);
 void verify_insert_function_scope();
@@ -82,7 +81,7 @@ char* returnFindScopeType();
 
 %type <node>  tradutor declaracoesExtenas declaracoesVariaveis funcoes parametros posDeclaracao tipagem sentencaLista sentenca conjuntoSentenca
 %type <node> conjuntoForall condicionalSentenca condicaoIF posIFForallExists iteracaoSentenca returnSentenca leituraEscritaSentenca
-%type <node>  argumentos argumentosLista  conjuntoIN expressao expressaoFor expressaoSimplificada expressaoSimplificada2 expressaoSimplificada3 expressaoSimplificada4
+%type <node>  argumentos argumentosLista  conjuntoIN expressao expressaoFor expressaoSimplificada expressaoComparacao expressaoNumerica expressaoMulDiv
 %type <node>  operacaoNumerica operacaoLogic termo operacaoComparacao operacaoMultDiv expressaoSimplificadaMinus 
 
 
@@ -349,39 +348,39 @@ expressaoFor: ID ASSING expressaoFor { if(DEPURADOR)printf("<expressaoFor> <== I
                                      } 
 ; 
 
-expressaoSimplificada:  expressaoSimplificada operacaoLogic expressaoSimplificada2       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
+expressaoSimplificada:  expressaoSimplificada operacaoLogic expressaoComparacao       { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoLogic> <termo>\n");
                                                                               $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada", NULL, NULL ,NULL);  
                                                                         } 
-                        | expressaoSimplificada2                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+                        | expressaoComparacao                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                                           $$ = $1;
                                                                         }
 
 ;
 
-expressaoSimplificada2: 
-  expressaoSimplificada2 operacaoComparacao expressaoSimplificada3  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
-                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);
+expressaoComparacao: 
+  expressaoComparacao operacaoComparacao expressaoNumerica  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoComparacao> <expressaoOperacao>\n");
+                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoNumerica", NULL, NULL ,NULL);
                                                                     }
-  | expressaoSimplificada3                                          { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+  | expressaoNumerica                                          { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
                                                                       $$ = $1;
                                                                     }
 ;
 
-expressaoSimplificada3: 
-  expressaoSimplificada3 operacaoNumerica expressaoSimplificada4  { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoNumerica> <termo>\n");
-                                                                    $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada2", NULL, NULL ,NULL);
+expressaoNumerica: 
+  expressaoNumerica operacaoNumerica expressaoMulDiv  { if(DEPURADOR)printf("<expressaoNumerica> <== <expressaoNumerica> <operacaoNumerica> <expressaoMulDiv>\n");
+                                                                    $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoComparacao", NULL, NULL ,NULL);
                                                                   }
-  | expressaoSimplificada4                                        { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+  | expressaoMulDiv                                        { if(DEPURADOR)printf("<expressaoNumerica> <== <termo>\n");
                                                                     $$ = $1;
                                                                   }
 ;
 
-expressaoSimplificada4:
-  expressaoSimplificada4 operacaoMultDiv expressaoSimplificadaMinus { if(DEPURADOR)printf("<expressaoSimplificada> <== <expressaoOperacao> <operacaoMultDiv> <termo>\n");
-                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoSimplificada3", NULL, NULL ,NULL);  
+expressaoMulDiv:
+  expressaoMulDiv operacaoMultDiv expressaoSimplificadaMinus { if(DEPURADOR)printf("<expressaoMulDiv> <== <expressaoMulDiv> <operacaoMultDiv> <expressaoSimplificadaMinus>\n");
+                                                                      $$ = addition_node($1 ,$2 ,$3 ,NULL, "expressaoNumerica", NULL, NULL ,NULL);  
                                                                     }  
   
-  | expressaoSimplificadaMinus                      { if(DEPURADOR)printf("<expressaoSimplificada> <== <termo>\n");
+  | expressaoSimplificadaMinus                      { if(DEPURADOR)printf("<expressaoMulDiv> <== <expressaoSimplificadaMinus>\n");
                                                       $$ = $1;
                                                     }
 ;
@@ -561,13 +560,6 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   }
 }
 
-char* concat(const char *str1, const char *str2){
-  char *output = malloc(strlen(str1) + strlen(str2) + 1);
-  strcpy(output, str1);
-  strcat(output, str2);
-  return output;
-}
-
 char* returnFindScopeType(){
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
@@ -700,13 +692,12 @@ void show_elements(){
       printf("type= %10s\t",elt->typeObj);
       printf("|id= %15s\t",elt->nameObj);
       printf("|scope= %15s\t", elt->scopeName);
-      printf("|local= %15s\n", elt->localObj);
-      // printf("|local= %3d\n", elt->levelScope);
+      printf("|local= %15s\t", elt->localObj);
+      printf("|nivel= %3d\n", elt->levelScope);
     }
   }
   printf("\n\n");
 }
-
 
 void delete_elements(){
   struct element *elt;
