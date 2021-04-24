@@ -72,6 +72,7 @@ void verify_main_declarion();
 void verify_number_arguments();
 void verify_return_scope();
 char* isIntFloatCurrentType(char *id);
+char* returnFindScopeType();
 %}
 
 %union {
@@ -253,9 +254,14 @@ iteracaoSentenca:  FOR '(' expressao  expressaoSimplificada ';' expressaoFor ')'
                                                                                                     }
 ;
 
-returnSentenca: RETURN expressaoSimplificada ';' { if(DEPURADOR)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
-                                                   $$ = addition_node($2 ,NULL ,NULL ,NULL, "returnSentenca",$1 ,NULL ,NULL);
-                                                   insert_scope(NULL,$2->firstSymbol, "return");          
+returnSentenca: RETURN {needModifyCast=1;
+                        currentTypeCast = returnFindScopeType();
+                       }
+
+            expressaoSimplificada ';' { if(DEPURADOR)printf("<returnSentenca> <== RETURN expressaoSimplificada ';'\n");
+                                                   $$ = addition_node($3 ,NULL ,NULL ,NULL, "returnSentenca",$1 ,NULL ,NULL);
+                                                   insert_scope(NULL,$3->firstSymbol, "return");  
+                                                   needModifyCast=0;        
                                                  }
 ;
 
@@ -388,7 +394,6 @@ expressaoSimplificadaMinus:
                 $$ = $1;
               }
 ;
-
 
 operacaoNumerica: ADD  { if(DEPURADOR)printf("<operacaoNumerica> <== ADD\n");
                          $$ = addition_node(NULL ,NULL ,NULL ,NULL, "operacaoNumerica", $1, NULL ,NULL);
@@ -563,6 +568,24 @@ char* concat(const char *str1, const char *str2){
   return output;
 }
 
+char* returnFindScopeType(){
+  struct element *elt;
+  DL_FOREACH(elementParam,elt) {
+    if(strcmp(elt->nameObj,scope_current)==0 && strcmp(elt->localObj,"funcao")==0){
+      if(strcmp(elt->typeObj,"int")==0){
+        return "int";
+      }
+      else{
+         if(strcmp(elt->typeObj,"float")==0){
+          return "float";
+        }    
+      }
+    }
+  }
+    return "Non";
+  
+}
+
 char* isIntFloatCurrentType(char *id){
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
@@ -636,6 +659,7 @@ void verify_var_declaration(char *name){
 
 void verify_main_declarion(){
   struct element *obj;
+
   int passou = 0;
   DL_FOREACH(elementParam,obj) { 
     if(strcmp("main",obj->scopeName)==0 ){
@@ -682,6 +706,7 @@ void show_elements(){
   }
   printf("\n\n");
 }
+
 
 void delete_elements(){
   struct element *elt;
