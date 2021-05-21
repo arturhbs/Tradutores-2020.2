@@ -527,9 +527,12 @@ void insert_scope(char *typeParam, char *nameParam, char *local){
   // Verico se já existe na tabela de simbolos a variável declarada em um mesmo escopo, se sim, mostrar erro
   int repetido = 0;
   struct element *elt;
+
   DL_FOREACH(elementParam,elt) {
+    if(obj->nameObj == NULL) obj->nameObj = ".";
+    if(obj->typeObj == NULL && strcmp(obj->localObj, "return")==0) obj->typeObj = ".";
     if(obj->typeObj != NULL){// se for diferente eh pq esta sendo enviado como argumento, ai pode repetir
-      if( strcmp(obj->nameObj,elt->nameObj)==0 && obj->levelScope == levelScopeGlobal && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
+      if( strcmp(obj->nameObj,elt->nameObj)==0 && obj->levelScope > levelScopeGlobal && strcmp(obj->scopeName,elt->scopeName)==0 && (strcmp(obj->localObj, "parametro")==0 || strcmp(obj->localObj,"variavel")==0 || strcmp(obj->localObj,"funcao")==0)  ){
           repetido =1;
       }
     }
@@ -572,7 +575,7 @@ char* returnFindScopeType(){
 char* isIntFloatCurrentType(char *id){
   struct element *elt;
   DL_FOREACH(elementParam,elt) {
-    if(strcmp(elt->nameObj,id)==0){
+    if(strcmp(elt->nameObj,id)==0 && strcmp(elt->localObj,"return")!=0){
       if(strcmp(elt->typeObj,"int")==0){
         return "int";
       }
@@ -670,7 +673,7 @@ void verify_return_scope(){
     }
   }
   if(hasReturn == 0){
-     printf("\n##### Ocorreu erro SEMANTICO ######\n");
+     printf("\n##### Ocorreu WARNING SEMANTICO ######\n");
     printf("\n\t[ERRO SEMANTICO] Não há return no escopo '%s' no codigo.\n\n", scope_current);
     printf("##### Fim Erro     #####\n\n");
   }
@@ -761,6 +764,22 @@ void free_list(){
 
 }
 
+void createTAC(){
+  FILE *fp;
+  fp = fopen("output.tac", "w+");
+  fprintf(fp, ".table\n");
+  struct element *elt;
+  DL_FOREACH(elementParam,elt) {
+    if(strcmp(elt->localObj, "funcao")==0 || strcmp(elt->localObj, "variavel")==0 || strcmp(elt->localObj, "parametro")==0 ){
+      fprintf(fp,"%s\t",elt->typeObj);
+      fprintf(fp,"%s\n",elt->nameObj);
+    }
+  }
+  fprintf(fp, ".code\n");
+  fclose(fp);
+
+}
+
 void yyerror(const char *string_node) {
     printf("\n##### Ocorreu erro SINTATICO ######\n");
     printf("\n\t[ERRO SINTATICO] linha = %d, coluna = %d, yyerror = %s\n\n", currentLine, positionWord, string_node);
@@ -778,6 +797,7 @@ int main( int argc, char **argv ){
   if(deuErro == 0){
     printf("\n\n ####  Arvore Sintatica  #### \n\n");
     show_tree(begginTree, syntaticTree);
+    createTAC();
   }
   else{
     printf("\n\n***ERROS APARECERAM NO SINTATICO! NAO SERA MOSTRADO A ARVORE SINTATICA*** \n");
