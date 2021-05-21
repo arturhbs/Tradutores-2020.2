@@ -40,11 +40,25 @@ UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
 STRING \"[^\"][^\"]+\"
-CHAR '[^']?'|'\\[^']'
+CHAR '[^']?'|'\\a'|'\\b'|'\\f'|'\\n'|'\\r'|'\\t'|'\\v'|'\\\'|'\?'|'\\''
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
 
+
+{CHAR} {
+    positionWord += strlen(yytext);
+    //printf("Line %d | Position %d | CHAR = '%s' \n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
+    return CHAR;
+}
+
+{STRING} {
+    positionWord += strlen(yytext);
+    //printf("Line %d | Position %d | STRING = '%s' \n", currentLine, positionWord, yytext);
+    yylval.string_node = (char *) strdup(yytext);
+    return STRING;
+}
 
 {INT} {
     positionWord += strlen(yytext);
@@ -183,19 +197,6 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
     return RETURN;
 }
 
-{STRING} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | STRING = '%s' \n", currentLine, positionWord, yytext);
-    yylval.string_node = (char *) strdup(yytext);
-    return STRING;
-}
-
-{CHAR} {
-    positionWord += strlen(yytext);
-    //printf("Line %d | Position %d | CHAR = '%s' \n", currentLine, positionWord, yytext);
-    yylval.string_node = (char *) strdup(yytext);
-    return CHAR;
-}
 
 {ADD_SUB} {
     positionWord += strlen(yytext);
