@@ -1,119 +1,118 @@
-<tradutor> ::= <declaracoesExtenas>
+<tradutor> :== <declaracoesExtenas>
 
-<declaracoesExtenas> ::= <funcoes>
-                        | <declaracoesVariaveis>
-                        | <funcoes> <declaracoesExtenas>
-                        | <declaracoesVariaveis> <declaracoesExtenas>
+<declaracoesExtenas> :== <funcoes>
+                       | <declaracoesVariaveis>
+                       | <declaracoesExtenas> <funcoes>
+                       | <declaracoesExtenas> <declaracoesVariaveis>
+                       
+<declaracoesVariaveis> :== <tipagem> ID SEMICOMMA
+  
+<funcoes> :== <tipagem> ID OPEN_( <parametros> CLOSE_) <posDeclaracao>
+  
+<parametros> :== <parametros> COMMA <tipagem> ID
+                | <tipagem> ID
+                | %empty
 
-<funcoes> ::= <tipagem> <identificador> ( <parametros> ) <posDeclaracao>
+<posDeclaracao> :== OPEN_BRACKETS <sentencaLista> CLOSE_BRACKETS
 
-<tipagem> ::= int
-            | float
-            | elem
-            | set 
+<tipagem> :== TYPE_INT
+             | TYPE_FLOAT:
+             | TYPE_ELEM
+             | TYPE_SET
 
-<identificador> ::= (<sublinhado>|<letra>)+(<letra>|<digito>|<sublinhado>)*
+<sentencaLista> :== <sentencaLista> <sentenca>
+                   | %empty
 
-<parametros> ::= <tipagem> <identificador>
-                | <parametros> , <tipagem> <identificador>
-                | e
-
-<declaracoesVariaveis> ::= <tipagem> <identificador> ; 
-
-<posDeclaracao> ::= { <declaracoesVariaveisLocais> <sentencaLista> }
-
-<declaracoesVariaveisLocais> ::= <declaracoesVariaveisLocais> <declaracoesVariaveis>
-                               | e 
-
-<sentencaLista> ::=  <sentencaLista> <sentenca> | e
-
-<sentenca> ::= <condicionalSentenca>
+<sentenca>:== <condicionalSentenca>
             | <iteracaoSentenca>
             | <returnSentenca>
             | <leituraEscritaSentenca>
-            | <chamaFuncoes>
-            | <expressoesSentenca> 
-            | <conjuntoSentenca>
+            | <expressao>
+            | <declaracoesVariaveis>
+            | <conjuntoForall>
             
 
-<condicionalSentenca> ::= if ( <expressaoSimplificada> ) <posDeclaracao>
-                         | if ( <expressaoSimplificada> ) <posDeclaracao> else <posDeclaracao>
+<conjuntoForall>:== SET_FORALL OPEN_( <conjuntoIN> CLOSE_) <posIFForallExists>
 
+<condicionalSentenca>:== IF OPEN_( <condicaoIF> CLOSE_) <posIFForallExists>
+                        | IF OPEN_( <condicaoIF> CLOSE_) <posIFForallExists> ELSE <posIFForallExists>
 
-<expressaoSimplificada> ::= <expressaoOperacao> <operacaoComparacao> <expressaoOperacao> 
-                      | <expressaoOperacao>
+<condicaoIF>:== <expressaoSimplificada>
+                | <conjuntoIN>
+                | NEGATIVE <expressaoSimplificada>
+                | NEGATIVE <conjuntoIN>
+                | OPEN_( <conjuntoIN> CLOSE_)
 
+<posIFForallExists>:== <posDeclaracao>
+                      | <sentenca>
 
-<iteracaoSentenca> ::= for ( <expressao> ; <expressaoSimplificada> ; <expressao> ) <posDeclaracao>
+<iteracaoSentenca>:==
+                 FOR OPEN_( <expressao> <expressaoSimplificada> SEMICOMMA <expressaoFor> CLOSE_) <posDeclaracao>
 
-<expressao> ::= <identificador> = <expressao> 
-               | <expressaoSimplificada> ;
+<returnSentenca>:== RETURN <expressaoSimplificada> SEMICOMMA
 
-<returnSentenca> ::= return <expressaoSimplificada> ; 
-                    | return ;
+<leituraEscritaSentenca>:== OUT_WRITE OPEN_( <expressaoSimplificada> CLOSE_) SEMICOMMA
+                            | OUT_WRITELN OPEN_( <expressaoSimplificada> CLOSE_) SEMICOMMA
+                            | IN_READ OPEN_( ID CLOSE_) SEMICOMMA
 
-<leituraEscritaSentenca> ::= write (STRING)
-                            | writeln (STRING)
-                            | read (<identificador>)
+<argumentos>:== <argumentosLista>
+              | %empty
 
-<chamaFuncoes> ::= <identificador> (<argumentos>)
+<argumentosLista>:== <expressaoSimplificada>
+                   | <argumentosLista> COMMA <expressaoSimplificada>
 
-<argumentos> ::= <argumentosLista> 
-                | e 
+<conjuntoSentenca>:== SET_ADD OPEN_( <conjuntoIN> CLOSE_)
+                    | SET_REMOVE OPEN_( <conjuntoIN> CLOSE_)
+                    | SET_IS_SET OPEN_( ID CLOSE_)
+                    | SET_EXISTS OPEN_( <conjuntoIN> CLOSE_)
 
-<argumentosLista> ::= <expressaoSimplificada> 
-                     | <expressaoSimplificada>, <argumentosLista>
-                     | expressaoSimplificada   
+<conjuntoIN>:== <expressaoSimplificada> SET_IN <conjuntoSentenca>
+                | <expressaoSimplificada> SET_IN ID
 
-<expressoesSentenca> ::= <identificador> <expressao> 
-                       | <expressaoSimplificada> ;                          
+<expressao>:== ID ASSING <expressao>
+             | <expressaoSimplificada> SEMICOMMA
 
-<conjuntoSentenca> ::= ADD ( <conjuntoBoleano> ) ;
-                      | REMOVE ( <conjuntoBoleano>) ;
-                      | FORALL(<conjuntoExpressaoForallExists>) <sentenca> ;
-                      | IS_SET(<identificador>) ;
-                      | EXISTS (<conjuntoExpressaoForallExists>) <sentenca> ;
+<expressaoFor>:== ID ASSING <expressaoFor>
+                | <expressaoSimplificada>
 
-<conjuntoBoleano> ::= <expressao> IN <conjuntoSentenca>
-                     | <expressao> IN <identificador>
+<expressaoSimplificada>: <expressaoSimplificada> <operacaoLogic> <expressaoComparacao>
+                      | <expressaoComparacao>
 
-<conjuntoExpressaoForallExists> ::= <identificador> IN <conjuntoSentenca>
-                             | <identificador> IN <identificador>    
-                   
-<expressaoOperacao> ::= <expressaoOperacao> <operacaoNumerica> <termo>
-                       | <expressaoOperacao> <operacaoLogic> <termo>
-                       | <termo>
+<expressaoComparacao>: <expressaoComparacao> <operacaoComparacao> <expressaoNumerica>
+                    | <expressaoNumerica>
 
-<operacaoComparacao> ::=  ==
-                        |!=
-                        |>
-                        |<
-                        |>=
-                        |<=
-                        
-<operacaoNumerica> ::=  +
-                        | -
-                        | /
-                        | * 
+<expressaoNumerica>: <expressaoNumerica> <operacaoNumerica> <expressaoMulDiv>
+                  | <expressaoMulDiv>
 
-<operacaoLogic> ::= ||
-                    | &&
-                    | !
+<expressaoMulDiv>: <expressaoMulDiv> <operacaoMultDiv> <expressaoSimplificadaMinus>
+                | <expressaoSimplificadaMinus>
 
-<termo> ::= (<expressaoSimplificada>)
-    |<identificador>
-    | INT
-    | FLOAT
-    | EMPTY_LABEL
-    | OPEN_QUOTE STRING CLOSE_QUOTE
+<expressaoSimplificadaMinus>: SUB <termo>
+                           | <termo>
 
+<operacaoNumerica>: ADD
+                 | SUB
 
+<operacaoMultDiv>: MULT
+                | DIV
 
-<letra> ::= [a-zA-Z] <letra>
-            | e
+<operacaoLogic>:== OR
+                 | AND
+                 | NEGATIVE
 
-<digito> ::= [0-9] <digito>
-            | e
+<operacaoComparacao>:== COMPARABLES_EQUAL
+                      | COMPARABLES_DIFF
+                      | COMPARABLES_LTE
+                      | COMPARABLES_GTE
+                      | COMPARABLES_LT
+                      | COMPARABLES_GT
 
-<sublinhado>  ::= _
-
+<termo>:== OPEN_( <expressaoSimplificada> CLOSE_)
+          | ID
+          | INT
+          | FLOAT
+          | EMPTY_LABEL
+          | STRING
+          | CHAR
+          | ID OPEN_( <argumentos> CLOSE_)
+          | <conjuntoSentenca>

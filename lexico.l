@@ -20,8 +20,8 @@ int positionWord = 1;
 %option noyywrap
 %option noinput nounput
 
-INT [-]?{DIGIT}+
-FLOAT [-]?{DIGIT}+"."{DIGIT}*
+INT {DIGIT}+
+FLOAT {DIGIT}+"."{DIGIT}*
 TYPE "int"|"float"|"elem"|"set"
 SET_COMMANDS "add"|"remove"|"forall"|"is_set"|"in"|"exists"
 EMPTY_LABEL "EMPTY"
@@ -40,7 +40,7 @@ UNDERSCORE "_"
 DIGIT [0-9]
 LETTER [a-zA-Z]
 STRING \"[^\"][^\"]+\"
-CHAR '[^']'
+CHAR '[^']?'|'\\[^']'
 ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 %%
@@ -363,7 +363,7 @@ ID  ({UNDERSCORE}|{LETTER})+({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 . {
     printf("\n##### Ocorreu erro LEXICO ######\n");
-    printf("[ERRO LEXICO] Line %d | Position %d | ERROR = '%s' \n",  currentLine, positionWord, yytext);
+    printf("\n\t[ERRO LEXICO] Line %d | Position %d | ERROR = '%s' \n\n",  currentLine, positionWord, yytext);
     printf("##### Fim Erro     #####\n\n");
 }
 
